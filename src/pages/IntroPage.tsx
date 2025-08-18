@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ExternalLink, Github, Linkedin, Mail, User } from 'lucide-react';
+import { ExternalLink, Github, Linkedin, Mail, User, Twitter } from 'lucide-react';
 import { personalInfo, publications, projects } from '../data/content';
 import { siteConfig } from '../config/siteConfig';
 import { Section } from '../components/ui/Section';
@@ -51,6 +51,14 @@ function HeroSection() {
               <Button variant="ghost" size="sm" asChild>
                 <a href={personalInfo.social.linkedin} target="_blank" rel="noopener noreferrer">
                   <Linkedin size={16} />
+                </a>
+              </Button>
+            )}
+            
+            {personalInfo.social.twitter && (
+              <Button variant="ghost" size="sm" asChild>
+                <a href={personalInfo.social.twitter} target="_blank" rel="noopener noreferrer">
+                  <Twitter size={16} />
                 </a>
               </Button>
             )}

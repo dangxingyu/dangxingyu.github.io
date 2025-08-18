@@ -34,9 +34,9 @@ export const publications: Publication[] = [
     id: "2",
     title: "RNNs are not Transformers: The Key Bottleneck on In-context Retrieval",
     authors: ["Kaiyue Wen*", "Xingyu Dang*", "Kaifeng Lyu"],
-    venue: "arXiv preprint",
+    venue: "ICLR 2025",
     year: 2024,
-    type: "preprint",
+    type: "conference",
     abstract: "This paper studies the representational capacity gap between recurrent neural networks (RNNs) and Transformers when solving algorithmic problems. We find that despite their memory efficiency for long sequences, RNNs still cannot match Transformer performance even with enhanced chain-of-thought (CoT) prompting. The key bottleneck is RNNs' inability to perfectly retrieve information from context."
   }
 ];
