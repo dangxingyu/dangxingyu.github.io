@@ -192,7 +192,7 @@ function PublicationsSection() {
           viewport={{ once: true }}
           className="text-center pt-6"
         >
-          <Button variant="outline" asChild>
+          <Button variant="secondary" asChild>
             <a 
               href={personalInfo.social.scholar} 
               target="_blank" 
