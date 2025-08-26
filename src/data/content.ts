@@ -25,9 +25,10 @@ export const publications: Publication[] = [
     id: "1",
     title: "Weight Ensembling Improves Reasoning in Language Models",
     authors: ["Xingyu Dang*", "Christina Baek*", "Kaiyue Wen", "Zico Kolter", "Aditi Raghunathan"],
-    venue: "arXiv preprint",
+    venue: "COLM 2025",
     year: 2025,
-    type: "preprint",
+    type: "conference",
+    pdf: "https://arxiv.org/abs/2504.10478",
     abstract: "This work investigates failure modes in reasoning model training where generation diversity begins to collapse, leading to poor test-time scaling. We find that interpolating weights between the latest supervised fine-tuning (SFT) checkpoint and earlier checkpoints (called WiSE-FT) can significantly recover generation diversity and improve test-time performance."
   },
   {
@@ -37,6 +38,7 @@ export const publications: Publication[] = [
     venue: "ICLR 2025",
     year: 2024,
     type: "conference",
+    pdf: "https://arxiv.org/abs/2402.18510",
     abstract: "This paper studies the representational capacity gap between recurrent neural networks (RNNs) and Transformers when solving algorithmic problems. We find that despite their memory efficiency for long sequences, RNNs still cannot match Transformer performance even with enhanced chain-of-thought (CoT) prompting. The key bottleneck is RNNs' inability to perfectly retrieve information from context."
   }
 ];

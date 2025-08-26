@@ -178,6 +178,14 @@ function PublicationsSection() {
                 
                 <div className="flex items-center space-x-3 pt-2">
                   <Tag>{publication.type}</Tag>
+                  {publication.pdf && (
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={publication.pdf} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1">
+                        <ExternalLink size={14} />
+                        <span>arXiv</span>
+                      </a>
+                    </Button>
+                  )}
                   {publication.doi && (
                     <Button variant="ghost" size="sm" asChild>
                       <a href={`https://doi.org/${publication.doi}`} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1">
