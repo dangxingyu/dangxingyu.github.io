@@ -3,7 +3,7 @@ import { PersonalInfo, Publication, Project } from '../types';
 export const personalInfo: PersonalInfo = {
   name: "Xingyu Dang",
   title: "PhD Student at Princeton University",
-  bio: "Hi! I am Xingyu Dang, a first-year PhD student at CS department of Princeton University, working with Prof. Sanjeev Arora. I graduated from Yao Class, Tsinghua University. During my undergraduate study, I'm fortunte to be work under the guidance of Prof. Aditi Raghunathan, Prof. Kaifeng Lyu and Prof. Yang Yuan. \n\n My research interests lie in improving the reasoning capability, interpretability and efficiency of large language models.",
+  bio: "Hi! I am Xingyu Dang, a first-year PhD student at CS department of Princeton University, working with [Prof. Sanjeev Arora](https://www.cs.princeton.edu/~arora/). I graduated from Yao Class, Tsinghua University. During my undergraduate study, I'm fortunte to be work under the guidance of [Prof. Aditi Raghunathan](https://www.cs.cmu.edu/~aditirag/), [Prof. Kaifeng Lyu](https://kaifeng.ac/) and [Prof. Yang Yuan](http://people.iiis.tsinghua.edu.cn/~yuanyang/en.html). \n\n My research interests lie in improving the reasoning capability, interpretability and efficiency of large language models.",
   email: "xingyudang@gmail.com",
   avatar: "/avatar.jpg",
   social: {

@@ -6,6 +6,7 @@ import { Section } from '../components/ui/Section';
 import { Card } from '../components/ui/Card';
 import { Tag } from '../components/ui/Tag';
 import { Button } from '../components/ui/Button';
+import { MarkdownRenderer } from '../components/MarkdownRenderer';
 
 function HeroSection() {
   return (
@@ -26,9 +27,9 @@ function HeroSection() {
             {personalInfo.title}
           </p>
           
-          <p className="text-lg text-[var(--text-secondary)] mb-8 leading-relaxed">
-            {personalInfo.bio}
-          </p>
+          <div className="text-lg text-[var(--text-secondary)] mb-8 leading-relaxed prose prose-invert max-w-none">
+            <MarkdownRenderer content={personalInfo.bio} />
+          </div>
           
           {/* Social links */}
           <div className="flex space-x-4">
