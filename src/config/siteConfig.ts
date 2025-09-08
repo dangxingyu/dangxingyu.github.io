@@ -13,7 +13,7 @@ export interface SiteConfig {
 export const siteConfig: SiteConfig = {
   sections: {
     hero: true,
-    researchInterests: true,  // Set to false to hide Research Interests section
+    researchInterests: false,  // Set to false to hide Research Interests section
     publications: true,        // Set to false to hide Publications section
     projects: false,           // Set to false to hide Projects section (currently hidden)
   }

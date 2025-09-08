@@ -13,12 +13,12 @@ export function Header() {
 
   return (
     <motion.header 
-      className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-primary)]/90 backdrop-blur-md border-b border-[var(--border-subtle)]"
+      className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200"
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo/Name */}
           <motion.div 
@@ -26,7 +26,7 @@ export function Header() {
             whileHover={{ scale: 1.02 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
           >
-            <Link to="/" className="text-xl font-bold text-gradient focus-visible:focus">
+            <Link to="/" className="text-xl font-bold text-black focus-visible:focus">
               {personalInfo.name}
             </Link>
           </motion.div>
@@ -48,14 +48,14 @@ export function Header() {
                     to={item.href}
                     className={`relative px-3 py-2 text-sm font-medium transition-all duration-200 focus-visible:focus ${
                       isActive
-                        ? 'text-[var(--accent-blue)]'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        ? 'text-black'
+                        : 'text-gray-600 hover:text-black'
                     }`}
                   >
                     {item.name}
                     {isActive && (
                       <motion.div
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent-blue)]"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-black"
                         layoutId="activeTab"
                         initial={false}
                         transition={{ type: "spring", stiffness: 500, damping: 30 }}

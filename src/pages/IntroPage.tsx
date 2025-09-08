@@ -1,304 +1,247 @@
 import { motion } from 'framer-motion';
-import { ExternalLink, Github, Linkedin, Mail, User, Twitter } from 'lucide-react';
-import { personalInfo, publications, projects } from '../data/content';
+import { ExternalLink, Github, Linkedin, Mail, User } from 'lucide-react';
+import { personalInfo, publications } from '../data/content';
 import { siteConfig } from '../config/siteConfig';
-import { Section } from '../components/ui/Section';
-import { Card } from '../components/ui/Card';
-import { Tag } from '../components/ui/Tag';
-import { Button } from '../components/ui/Button';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 
 function HeroSection() {
   return (
-    <Section className="pt-20 pb-16">
-      <div className="grid lg:grid-cols-2 gap-12 items-center">
-        {/* Left side - Text content */}
+    <div className="min-h-screen bg-white flex items-center relative">
+      <div className="max-w-4xl mx-auto px-4 py-20">
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-center space-y-8"
         >
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-[var(--text-primary)] mb-6 leading-tight">
-            <span className="text-gradient">{personalInfo.name.split(' ')[0]}</span>{' '}
-            <span className="text-[var(--text-primary)]">{personalInfo.name.split(' ')[1]}</span>
+          {/* Avatar at the top */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+            className="mb-4"
+          >
+            <motion.div
+              className="inline-block"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-gray-300 bg-gray-100 mx-auto">
+                {personalInfo.avatar ? (
+                  <img 
+                    src={personalInfo.avatar} 
+                    alt={personalInfo.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <User size={90} className="text-gray-400" />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+          
+          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold text-black mb-6 leading-tight tracking-tight">
+            {personalInfo.name}
           </h1>
           
-          <p className="text-xl text-[var(--accent-blue)] mb-6 font-medium">
+          <p className="text-2xl text-gray-600 mb-8 font-light">
             {personalInfo.title}
           </p>
           
-          <div className="text-lg text-[var(--text-secondary)] mb-8 leading-relaxed prose prose-invert max-w-none">
+          <div className="text-lg text-gray-700 mb-12 leading-relaxed max-w-2xl mx-auto">
             <MarkdownRenderer content={personalInfo.bio} />
           </div>
           
           {/* Social links */}
-          <div className="flex space-x-4">
-            <Button variant="secondary" size="sm" asChild>
-              <a href={`mailto:${personalInfo.email}`} className="flex items-center space-x-2">
-                <Mail size={16} />
-                <span>Contact</span>
-              </a>
-            </Button>
+          <div className="flex justify-center space-x-6">
+            <motion.a 
+              href={`mailto:${personalInfo.email}`} 
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Mail size={18} />
+              <span>Contact</span>
+            </motion.a>
             
             {personalInfo.social.github && (
-              <Button variant="ghost" size="sm" asChild>
-                <a href={personalInfo.social.github} target="_blank" rel="noopener noreferrer">
-                  <Github size={16} />
-                </a>
-              </Button>
+              <motion.a 
+                href={personalInfo.social.github} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-3 border border-gray-300 rounded-full hover:border-black hover:text-black transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Github size={18} className="text-gray-700" />
+              </motion.a>
             )}
             
             {personalInfo.social.linkedin && (
-              <Button variant="ghost" size="sm" asChild>
-                <a href={personalInfo.social.linkedin} target="_blank" rel="noopener noreferrer">
-                  <Linkedin size={16} />
-                </a>
-              </Button>
+              <motion.a 
+                href={personalInfo.social.linkedin} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-3 border border-gray-300 rounded-full hover:border-black hover:text-black transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Linkedin size={18} className="text-gray-700" />
+              </motion.a>
             )}
             
             {personalInfo.social.twitter && (
-              <Button variant="ghost" size="sm" asChild>
-                <a href={personalInfo.social.twitter} target="_blank" rel="noopener noreferrer">
-                  <Twitter size={16} />
-                </a>
-              </Button>
+              <motion.a 
+                href={personalInfo.social.twitter} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-3 border border-gray-300 rounded-full hover:border-black hover:text-black transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-gray-700">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </motion.a>
+            )}
+            
+            {personalInfo.social.scholar && (
+              <motion.a 
+                href={personalInfo.social.scholar} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-3 border border-gray-300 rounded-full hover:border-black hover:text-black transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ExternalLink size={18} className="text-gray-700" />
+              </motion.a>
             )}
           </div>
         </motion.div>
-        
-        {/* Right side - Avatar/Visual element */}
-        <motion.div
-          className="flex justify-center lg:justify-end"
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-        >
-          <div className="relative">
-            <motion.div
-              className="w-64 h-64 rounded-full border-2 border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-secondary)]"
-              whileHover={{
-                scale: 1.02,
-              }}
-              transition={{
-                scale: { duration: 0.2, ease: "easeOut" },
-              }}
-            >
-              {personalInfo.avatar ? (
-                <img 
-                  src={personalInfo.avatar} 
-                  alt={personalInfo.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-tertiary)] flex items-center justify-center">
-                  <User size={80} className="text-[var(--accent-blue)]" />
-                </div>
-              )}
-            </motion.div>
-            
-            {/* Simplified floating elements */}
-            <motion.div
-              className="absolute -top-2 -right-2 w-8 h-8 bg-[var(--accent-blue)]/20 rounded-full border border-[var(--accent-blue)]/50 backdrop-blur-sm"
-              animate={{ y: [-3, 3, -3] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-              className="absolute -bottom-2 -left-2 w-6 h-6 bg-[var(--accent-secondary)]/20 rounded-full border border-[var(--accent-secondary)]/50 backdrop-blur-sm"
-              animate={{ y: [3, -3, 3] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </div>
-        </motion.div>
       </div>
-    </Section>
+    </div>
   );
 }
 
-function ResearchInterestsSection() {
-  return (
-    <Section 
-      title="Research Interests" 
-      subtitle="Areas of focus in my research and development work"
-    >
-      <div className="flex flex-wrap justify-center gap-3">
-        {personalInfo.researchInterests.map((interest, index) => (
-          <motion.div
-            key={interest}
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            viewport={{ once: true }}
-          >
-            <Tag variant="accent" className="text-base px-4 py-2">{interest}</Tag>
-          </motion.div>
-        ))}
-      </div>
-    </Section>
-  );
-}
 
 function PublicationsSection() {
+  if (!siteConfig.sections.publications) return null;
+
   return (
-    <Section 
-      title="Selected Publications" 
-      subtitle="Selected research papers and academic contributions"
-    >
-      <div className="space-y-6">
-        {publications.map((publication, index) => (
-          <motion.div
-            key={publication.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: index * 0.1 }}
-            viewport={{ once: true }}
-          >
-            <Card className="hover:border-[var(--accent-blue)]/50">
-              <div className="flex flex-col space-y-3">
+    <div className="bg-white py-20">
+      <div className="max-w-4xl mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-3xl font-bold text-black mb-4">
+            Selected Publications
+          </h2>
+          <div className="w-16 h-0.5 bg-black mx-auto"></div>
+        </motion.div>
+        
+        <div className="space-y-12">
+          {publications.map((publication, index) => (
+            <motion.article
+              key={publication.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              viewport={{ once: true }}
+              className="group"
+            >
+              <div className="space-y-4">
                 <div className="flex items-start justify-between">
-                  <h3 className="text-lg font-semibold text-[var(--text-primary)] leading-tight">
+                  <h3 className="text-xl font-semibold text-black leading-tight group-hover:text-gray-600 transition-colors duration-200">
                     {publication.title}
                   </h3>
-                  <span className="text-sm text-[var(--text-secondary)] whitespace-nowrap ml-4">
+                  <span className="text-sm text-gray-500 whitespace-nowrap ml-4">
                     {publication.year}
                   </span>
                 </div>
                 
-                <p className="text-sm text-[var(--text-secondary)]">
+                <p className="text-gray-600">
                   {publication.authors.join(', ')}
                 </p>
                 
-                <p className="text-sm font-medium text-[var(--accent-blue)]">
+                <p className="font-medium text-gray-800">
                   {publication.venue}
                 </p>
                 
                 {publication.abstract && (
-                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                  <p className="text-gray-700 leading-relaxed">
                     {publication.abstract}
                   </p>
                 )}
                 
-                <div className="flex items-center space-x-3 pt-2">
-                  <Tag>{publication.type}</Tag>
+                <div className="flex items-center space-x-6 text-sm">
+                  <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
+                    {publication.type}
+                  </span>
                   {publication.pdf && (
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={publication.pdf} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1">
-                        <ExternalLink size={14} />
-                        <span>arXiv</span>
-                      </a>
-                    </Button>
+                    <a 
+                      href={publication.pdf} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-black hover:underline transition-colors duration-200"
+                    >
+                      arXiv →
+                    </a>
                   )}
                   {publication.doi && (
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={`https://doi.org/${publication.doi}`} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1">
-                        <ExternalLink size={14} />
-                        <span>DOI</span>
-                      </a>
-                    </Button>
+                    <a 
+                      href={`https://doi.org/${publication.doi}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-black hover:underline transition-colors duration-200"
+                    >
+                      DOI →
+                    </a>
                   )}
                 </div>
               </div>
-            </Card>
-          </motion.div>
-        ))}
+              {index < publications.length - 1 && (
+                <div className="mt-12 w-full h-px bg-gray-200" />
+              )}
+            </motion.article>
+          ))}
+        </div>
         
         {/* Full list link */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: publications.length * 0.1 }}
-          viewport={{ once: true }}
-          className="text-center pt-6"
-        >
-          <Button variant="secondary" asChild>
+        {personalInfo.social.scholar && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="text-center mt-16 pt-8 border-t border-gray-200"
+          >
             <a 
               href={personalInfo.social.scholar} 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="flex items-center space-x-2"
+              className="inline-block text-gray-600 hover:text-black transition-colors duration-200 text-lg"
             >
-              <ExternalLink size={16} />
-              <span>View Full Publication List</span>
+              View full publication list →
             </a>
-          </Button>
-        </motion.div>
-      </div>
-    </Section>
-  );
-}
-
-function ProjectsSection() {
-  return (
-    <Section 
-      title="Featured Projects" 
-      subtitle="Open source projects and research implementations"
-    >
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project, index) => (
-          <motion.div
-            key={project.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: index * 0.1 }}
-            viewport={{ once: true }}
-          >
-            <Card 
-              variant={project.featured ? 'default' : 'alt'}
-              className="h-full flex flex-col"
-            >
-              <div className="flex-1 space-y-4">
-                <div className="flex items-start justify-between">
-                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">
-                    {project.title}
-                  </h3>
-                  {project.featured && (
-                    <Tag variant="accent">Featured</Tag>
-                  )}
-                </div>
-                
-                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  {project.description}
-                </p>
-                
-                <div className="flex flex-wrap gap-2">
-                  {project.technologies.map((tech) => (
-                    <Tag key={tech}>{tech}</Tag>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3 pt-4 mt-4 border-t border-[var(--border-subtle)]">
-                {project.githubUrl && (
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1">
-                      <Github size={14} />
-                      <span>Code</span>
-                    </a>
-                  </Button>
-                )}
-                {project.demoUrl && (
-                  <Button variant="secondary" size="sm" asChild>
-                    <a href={project.demoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1">
-                      <ExternalLink size={14} />
-                      <span>Demo</span>
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </Card>
           </motion.div>
-        ))}
+        )}
       </div>
-    </Section>
+    </div>
   );
 }
 
 export function IntroPage() {
   return (
-    <div className="space-y-16">
+    <div className="min-h-screen">
       {siteConfig.sections.hero && <HeroSection />}
-      {siteConfig.sections.researchInterests && <ResearchInterestsSection />}
       {siteConfig.sections.publications && <PublicationsSection />}
-      {siteConfig.sections.projects && <ProjectsSection />}
     </div>
   );
 }
