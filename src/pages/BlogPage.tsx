@@ -18,24 +18,24 @@ function BlogPostCard({ post, index }: { post: ReturnType<typeof getBlogPosts>[0
       viewport={{ once: true }}
       className="group"
     >
-      <Link to={`/blog/${post.slug}`} className="block">
+      <a href={`/blog/${post.slug}.html`} className="block">
         <div className="py-8 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 -mx-4 px-4">
           <div className="space-y-3">
             <h2 className="text-2xl font-semibold text-black group-hover:text-gray-600 transition-colors duration-200 leading-tight">
               {post.title}
             </h2>
-            
+
             <p className="text-gray-600 leading-relaxed text-lg">
               {post.excerpt}
             </p>
-            
+
             <div className="flex items-center space-x-6 text-sm text-gray-500">
               <time dateTime={post.publishedAt}>{formattedDate}</time>
               <span>{post.readingTime} min read</span>
             </div>
           </div>
         </div>
-      </Link>
+      </a>
     </motion.article>
   );
 }

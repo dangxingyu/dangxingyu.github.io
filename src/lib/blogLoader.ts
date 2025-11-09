@@ -1,57 +1,26 @@
-import matter from 'gray-matter';
 import { BlogPost } from '../types';
 
-// Import markdown files as raw text
-import futureHumanAiMd from '/blog/future-human-ai-collaboration.md?raw';
-import transformerArchMd from '/blog/understanding-transformer-architecture.md?raw';
-
-// Blog post mapping
-const blogFiles = {
-  'future-human-ai-collaboration': futureHumanAiMd,
-  'understanding-transformer-architecture': transformerArchMd,
-};
-
-// Calculate reading time based on word count
-const calculateReadingTime = (content: string): number => {
-  const wordsPerMinute = 200;
-  const words = content.trim().split(/\s+/).length;
-  return Math.ceil(words / wordsPerMinute);
-};
-
-// Parse a markdown file and return a BlogPost
-const parseBlogPost = (fileName: string, content: string): BlogPost => {
-  const { data: frontmatter, content: markdownContent } = matter(content);
-  
-  return {
-    id: fileName,
-    title: frontmatter.title || '',
-    slug: frontmatter.slug || fileName,
-    excerpt: frontmatter.excerpt || '',
-    content: markdownContent,
-    publishedAt: frontmatter.publishedAt || '',
-    updatedAt: frontmatter.updatedAt,
-    tags: frontmatter.tags || [],
-    readingTime: frontmatter.readingTime || calculateReadingTime(markdownContent),
-  };
-};
+// Blog posts metadata (HTML files are in public/blog/)
+const blogPostsData: BlogPost[] = [
+  {
+    id: 'rlvr-ttlm',
+    title: 'RLVR is Time-Traveling',
+    slug: 'rlvr-ttlm',
+    excerpt: "In this blog, we'll connect RLVR to the modeling of Time-Traveling Turing Machines (TTTMs). We'll see that a \"one-bit signal from the future\" leads, mathematically, to the same equations that govern KL-regularized RLVR.",
+    content: '', // Not needed - HTML is served directly from public/blog/
+    publishedAt: '2025-11-08',
+    tags: ['RLVR', 'Reinforcement Learning', 'Theory', 'Language Models'],
+    readingTime: 12,
+  },
+];
 
 // Get all blog posts
 export const getBlogPosts = (): BlogPost[] => {
-  const posts: BlogPost[] = [];
-  
-  for (const [fileName, content] of Object.entries(blogFiles)) {
-    try {
-      const post = parseBlogPost(fileName, content);
-      posts.push(post);
-    } catch (error) {
-      console.error(`Error parsing blog post ${fileName}:`, error);
-    }
-  }
-  
-  // Sort posts by published date (newest first)
-  posts.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  
-  return posts;
+  // Return pre-defined blog posts metadata
+  // HTML files are served directly from public/blog/
+  return [...blogPostsData].sort((a, b) =>
+    new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  );
 };
 
 // Get a single blog post by slug

@@ -6,7 +6,7 @@ import sourceIdentifierPlugin from 'vite-plugin-source-info'
 const isProd = process.env.BUILD_MODE === 'prod'
 export default defineConfig({
   plugins: [
-    react(), 
+    react(),
     sourceIdentifierPlugin({
       enabled: !isProd,
       attributePrefix: 'data-matrix',
@@ -17,7 +17,18 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "/blog": path.resolve(__dirname, "./blog"),
+      buffer: 'buffer',
     },
+  },
+  define: {
+    'global': 'globalThis',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
   },
   base: '/', // For GitHub Pages user site (dangxingyu.github.io)
   build: {

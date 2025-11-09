@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RLVR is Time-Traveling</title>
+
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+          integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV"
+          crossorigin="anonymous">
+
+    <!-- KaTeX JS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+            integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8"
+            crossorigin="anonymous"></script>
+
+    <!-- KaTeX Auto-render Extension -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+            integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05"
+            crossorigin="anonymous"
+            onload="renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false,
+                trust: true
+            });"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            color: #333;
+        }
+
+        h1 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+
+        h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+            margin-top: 25px;
+        }
+
+        h3 {
+            margin-top: 20px;
+        }
+
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Fira Mono', 'Roboto Mono', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #e1e4e8;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.88em;
+            color: #24292e;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+
+        blockquote {
+            border-left: 4px solid #ddd;
+            margin: 0;
+            padding-left: 20px;
+            color: #666;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #ddd;
+            margin: 30px 0;
+        }
+
+        em {
+            font-style: italic;
+        }
+
+        strong {
+            font-weight: bold;
+        }
+
+        .katex-display {
+            margin: 1em 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        ul, ol {
+            padding-left: 30px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        .reference {
+            font-size: 0.85em;
+            vertical-align: super;
+            text-decoration: none;
+            color: #0066cc;
+        }
+
+        .reference:hover {
+            text-decoration: underline;
+        }
+
+        #references {
+            margin-top: 40px;
+        }
+
+        #references ol {
+            padding-left: 20px;
+        }
+
+        #references li {
+            margin: 12px 0;
+            line-height: 1.5;
+        }
+
+        .proof {
+            background-color: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .proof-header {
+            font-weight: bold;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<h1>RLVR is Time-Traveling</h1>
+<p><em>Posted on Nov 8, 2025 by Xingyu Dang</em></p>
+<p>Reinforcement Learning with Verifiable Rewards (RLVR) has driven many recent successes in reasoning models—from mathematical problem solving to code synthesis. In this blog, we’ll connect RLVR to the modeling of <strong>Time-Traveling Turing Machines (TTTMs)</strong>. We’ll see that a “one-bit signal from the future” leads, mathematically, to the same equations that govern KL-regularized RLVR.<br />
+In short: <em>RLVR is time-traveling.</em></p>
+<hr />
+<h2>Background: Time-Traveling Turing Machines</h2>
+<p>The idea of a “time-traveling computer” originates in theoretical computer science. Suppose a Turing machine can send a single bit of information to its own past. How much more powerful would it become?</p>
+<h3>Intuition</h3>
+<p>Imagine a machine that asks itself: “Did I output the correct answer?” If a bit from the future flips to 1 when the answer is correct, the machine can search for a self-consistent computation—one that will produce the same bit it already received.<br />
+That’s the core idea behind <em>time-traveling computation</em>: the system must reach a <strong>self-consistent fixed point</strong> between present and future.</p>
+<h3>Two classical models</h3>
+<ol>
+<li>
+<p><strong>Deutsch Closed Timelike Curves (CTC).</strong><br />
+   Introduced by David Deutsch in 1991, this model enforces that the distribution of messages sent into the past equals the distribution received—like a steady-state of time loops. Aaronson and Watrous (2009) famously showed that access to such CTCs boosts both classical and quantum computers to <strong>PSPACE</strong> power.</p>
+</li>
+<li>
+<p><strong>Postselection (PostBQP / PostBPP).</strong><br />
+   Instead of requiring fixed points, this weaker model allows conditioning on rare events that “would have happened.” For example, Aaronson (2005) showed that a quantum computer that can <em>postselect</em> on measurement outcomes has power <strong>PP</strong>-wiedly believed to be beyond BQP but below PSPACE.</p>
+</li>
+</ol>
+<p>Intuitively, CTCs represent <em>hard self-consistency</em> (nature must find a fixed point), while postselection represents <em>soft conditioning</em> ("imagine we are only in the universe where X happened").</p>
+<hr />
+<h2>Time-Traveling Language Models (TTLM)</h2>
+<p>Now, let's apply this idea to language models.</p>
+
+<h3>Definition: Time-Travel Bit</h3>
+<p>A <strong>time-travel bit (TTB)</strong> is a noisy one-bit message sent from the <em>future</em> back to the present during sequence generation. In general, this bit could encode any function of the final output \(y_{1:T}\)—it could signal success, failure, quality scores, or any binary property.</p>
+
+<p>Consider a base autoregressive language model \(\pi_0(y_{1:T}\mid x)=\prod_t \pi_0(y_t\mid h_{t-1})\). Suppose we have a task with a binary global verifier \(V(y_{1:T})\in\{0,1\}\) that checks whether the generated sequence is correct (e.g., a math problem solution passes unit tests, a code snippet compiles correctly).</p>
+
+<p><strong>Key insight:</strong> For such tasks, the optimal TTB is precisely the verifier outcome. Since the verifier \(V(y_{1:T})\) is a deterministic function of the sequence, let \(b\in\{0,1\}\) be any (possibly randomized) 1-bit summary generated from \(y_{1:T}\) via a channel \(P(b\mid y_{1:T})\). The goal is to maximize the <em>mutual information</em> between this bit and the verifier, \[ I(b;V) \;=\; \sum_{b,v} P(b,v)\log\frac{P(b,v)}{P(b)P(v)}\,, \] which measures how much information the bit carries about whether the output passes verification.</p> <p>The induced conditional \[ P(b\mid V=v)=\mathbb{E}_{y_{1:T}\mid V=v}\!\big[P(b\mid y_{1:T})\big],\quad v\in\{0,1\}, \] implies that the joint law of \((b,V)\)—and hence \(I(b;V)\)—depends only on \(P(b\mid V)\). Thus, without loss of optimality we may take \(b\) to depend on \(y_{1:T}\) only through \(V\). With a single-bit budget we have \(I(b;V)\le H(V)\le 1\), and the upper bound is achieved precisely when \(b\) is a bijection (or a noisy copy) of \(V\).</p> <p>Formally, with a symmetric noise channel (BSC\((\varepsilon)\)) applied to this one-bit copy of the verifier, after the model finishes generating \(y_{1:T}\) a bit \(b\) is produced: \[ b\sim \begin{cases} \mathrm{Ber}(1-\varepsilon), & V(y_{1:T})=1,\\ \mathrm{Ber}(\varepsilon), & V(y_{1:T})=0, \end{cases} \] where \(\varepsilon\in(0,\tfrac12)\) is the noise level. Define the inverse temperature \[ \beta = \log\frac{1-\varepsilon}{\varepsilon}. \] Larger \(\beta\) (smaller \(\varepsilon\)) means a more reliable signal from the future. Conditioning on \(b=1\) then enforces retrocausal consistency between the generated sequence and a successful verification.</p>
+
+<p>We call the resulting system a <strong>Time-Traveling Language Model (TTLM)</strong>. Two versions mirror the CTC vs. postselection divide:</p>
+<ul>
+<li><strong>CTC-TTLM:</strong> enforce a self-consistent fixed-point distribution over trajectories (like Deutsch CTC).  </li>
+<li><strong>Postselected-TTLM:</strong> condition explicitly on \(b=1\) (the run where the verifier succeeded).</li>
+</ul>
+<p>We'll focus on the <strong>postselected</strong> picture in this blog .</p>
+<hr />
+<h2>Exponential Tilting: How Postselected TTLM Works</h2>
+<p>Conditioning on \(b=1\) modifies the model's sequence distribution as follows:
+\[
+q_\beta(y_{1:T}\mid x)
+=
+\frac{\pi_0(y_{1:T}\mid x)\,e^{\beta V(y_{1:T})}}{Z_\beta(x)},
+\quad
+Z_\beta(x)=\mathbb{E}_{\pi_0}[e^{\beta V}\mid x]=(1-p)+e^{\beta}p,
+\]
+where \(p=\Pr_{\pi_0}(V=1\mid x)\).</p>
+
+<div class="proof">
+<div class="proof-header">Proof.</div>
+<p>By Bayes' theorem, \(q_\beta(y_{1:T}\mid x)=\Pr(y_{1:T}\mid b=1, x)\) equals:
+\[
+\frac{\Pr(b=1\mid y_{1:T})\,\pi_0(y_{1:T}\mid x)}{\Pr(b=1\mid x)}.
+\]
+From the TTB channel, \(\Pr(b=1\mid y_{1:T}) = \varepsilon \cdot e^{\beta V(y_{1:T})}\) where \(\beta = \log\frac{1-\varepsilon}{\varepsilon}\). By the law of total probability:
+\[
+\Pr(b=1\mid x) = \varepsilon \mathbb{E}_{\pi_0}[e^{\beta V}\mid x] = \varepsilon\big[(1-p) + e^{\beta}p\big] = \varepsilon Z_\beta(x),
+\]
+where \(p=\Pr_{\pi_0}(V=1\mid x)\). Substituting yields:
+\[
+q_\beta(y_{1:T}\mid x) = \frac{\pi_0(y_{1:T}\mid x)\,e^{\beta V(y_{1:T})}}{Z_\beta(x)}. \qquad \square
+\]
+</p>
+</div>
+
+<p>As \(\varepsilon\to0\) (\(\beta\to\infty\)), \(q_\beta\) collapses onto the successful set \(\{V=1\}\): perfect postselection.</p>
+<hr />
+<h2>RLVR Revisited</h2>
+<p>Let’s step back to RLVR—<strong>Reinforcement Learning with Verifiable Rewards</strong>.</p>
+<p>We start from the same ingredients:
+- base policy \(\pi_0\),
+- verifier \(V(y)\in\{0,1\}\),
+- and a KL-regularized objective
+  \[
+  J_\beta(\pi)
+  = \mathbb{E}_\pi[\beta V(y)]
+    - \mathrm{KL}(\pi\|\pi_0).
+  \]</p>
+<p>This formulation appears in linearly-solvable MDPs (Todorov, 2007) and “control as inference” (Levine, 2018).<br />
+Its optimal solution is exactly<a href="#ref2" class="reference">[2]</a>:
+\[
+\pi^*(y)\propto \pi_0(y)e^{\beta V(y)}.
+\]
+That is identical to the TTLM postselected distribution \(q_\beta\).</p>
+<p>Hence, KL-regularized RLVR is mathematically the same as time-traveling.</p>
+<hr />
+<h2>RLVR is Time-Traveling</h2>
+<p>The key correspondences reveal why RLVR <em>is</em> time-traveling:</p>
+<table>
+<thead>
+<tr>
+<th>Time-Travel View</th>
+<th>RLVR View</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Postselection on \(b=1\)</td>
+<td>KL-regularized RL</td>
+</tr>
+<tr>
+<td>Conditional distribution \(q_\beta(y) \propto \pi_0(y)e^{\beta V(y)}\)</td>
+<td>Optimal policy \(\pi^*(y) \propto \pi_0(y)e^{\beta V(y)}\)</td>
+</tr>
+<tr>
+<td>Retrocausal consistency (future \(\to\) past)</td>
+<td>Credit assignment (reward \(\to\) action)</td>
+</tr>
+<tr>
+<td>Prefix success probability \(p_{\text{succ}}(h)\)</td>
+<td>Value function / Q-function</td>
+</tr>
+</tbody>
+</table>
+<p>The first two rows establish the equivalence: postselection and optimal policy have <em>identical</em> mathematical forms. The agent adjusts its present behavior to remain compatible with a favorable future.<br />
+The one-bit from the future conveys <em>at most</em> one bit of information, yet that small hint can <strong>exponentially</strong> reduce the expected samples needed to reach success:
+\[
+p_\beta = \frac{e^{\beta}p}{(1-p)+e^{\beta}p},
+\]
+so rare events with probability \(p\) become \(e^{\beta}\) times more likely.</p>
+<p>The total information gain is bounded by \(1\) bit,
+but the <strong>search efficiency</strong> gain can be enormous.<br />
+That’s the paradoxical power of time travel: not adding information, just <em>re-weighting futures</em>.</p>
+<hr />
+<h2>Token-Level Semantics: The Doob Transform</h2>
+<p>The exponential tilt also yields a clean autoregressive update rule:
+\[
+q_\beta(y_t\mid h_{t-1})
+=
+\pi_0(y_t\mid h_{t-1})
+\frac{Z(h_t)}{Z(h_{t-1})},
+\qquad
+Z(h)=1+(e^{\beta}-1)p_{\text{succ}}(h),
+\]
+where \(p_{\text{succ}}(h)=\Pr_{\pi_0}(V=1\mid h)\) is the prefix-success probability.</p>
+<p>Taking logs:
+\[
+\log q_\beta(y_t\mid h_{t-1})
+=
+\log \pi_0(y_t\mid h_{t-1})
++\big[\log Z(h_t)-\log Z(h_{t-1})\big].
+\]</p>
+<p>That extra term is a logit bias-a small additive shift that nudges the model toward continuations more likely to lead to success.<br />
+If we have a predictor \(s_\phi(h)\approx p_{\text{succ}}(h)\), we can <em>practically implement this kind of “time travel”</em> in modeling. For example, such predictions can be made using random sampling methods like MCTS.</p>
+<hr />
+<h2>Conclusion</h2>
+<p>The math of RLVR can be read as a gentle form of time travel.<br />
+A one-bit signal from the future—“your output passes the verifier”—induces an exponential bias on today’s generation. That bias is equivalent to optimizing a KL-regularized reward objective.At the token level, it becomes a clean logit adjustment guided by the probability of eventual success.</p>
+<hr />
+<h2 id="references">References</h2>
+<ol>
+<li id="ref2">Todorov, E. (2007). <em>Linearly-solvable Markov decision problems.</em> In Advances in Neural Information Processing Systems.</li>
+<li id="ref3">Levine, S. (2018). <em>Reinforcement learning and control as probabilistic inference: Tutorial and review.</em> arXiv preprint arXiv:1805.00909.</li>
+<li id="ref4">Aaronson, S. (2005). <em>Quantum computing, postselection, and probabilistic polynomial-time.</em> Proceedings of the Royal Society A, 461(2063), 3473-3482.</li>
+<li id="ref5">Aaronson, S., &amp; Watrous, J. (2009). <em>Closed timelike curves make quantum and classical computing equivalent.</em> Proceedings of the Royal Society A, 465(2102), 631-647.</li>
+<li id="ref6">Deutsch, D. (1991). <em>Quantum mechanics near closed timelike lines.</em> Physical Review D, 44(10), 3197.</li>
+</ol>
+<hr />
+<h2 id="citation">Citation</h2>
+<p>Please cite this blog post as:</p>
+<pre><code>@misc{dang2025rlvrtimetravel,
+  author = {Dang, Xingyu},
+  title = {RLVR is Time-Traveling},
+  year = {2025},
+  month = {November},
+  url = {https://dangxingyu.github.io/blog/rlvr-ttlm.html}
+}</code></pre>
+</body>
+</html>
