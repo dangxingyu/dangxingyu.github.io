@@ -29,9 +29,15 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-page items-baseline justify-between px-6 sm:px-10 lg:px-16">
         <Link
           to="/"
-          className="font-display text-[1.0625rem] tracking-[-0.01em] text-ink transition-colors duration-300 ease-out hover:text-accent"
+          className="group font-display text-[1.0625rem] tracking-[-0.01em] text-ink transition-colors duration-300 ease-out hover:text-accent"
         >
           Xingyu Dang
+          {/* Fraunces carries no CJK glyphs, so the Chinese name needs its own
+              stack or it silently falls back to the platform default and reads
+              as a different typeface bolted on. */}
+          <span lang="zh-Hans" className="font-cjk ml-1.5 text-ink-faint transition-colors duration-300 ease-out group-hover:text-accent">
+            党星宇
+          </span>
         </Link>
 
         <nav className="flex items-baseline gap-8">

@@ -31,7 +31,19 @@ module.exports = {
 			},
 			fontFamily: {
 				display: ['"Fraunces Variable"', 'Fraunces', 'Georgia', 'serif'],
-				text: ['"Newsreader Variable"', 'Newsreader', 'Georgia', 'serif'],
+				text: ['"Instrument Sans Variable"', 'Instrument Sans', 'system-ui', 'sans-serif'],
+				// Neither Fraunces nor Instrument Sans ships CJK, so Chinese needs an
+				// explicit stack rather than whatever the platform falls back to.
+				// Sans-first to match Instrument Sans; a serif CJK next to a
+				// grotesque Latin reads as two unrelated typefaces.
+				cjk: [
+					'"PingFang SC"',
+					'"Hiragino Sans GB"',
+					'"Source Han Sans SC"',
+					'"Noto Sans CJK SC"',
+					'"Microsoft YaHei"',
+					'sans-serif',
+				],
 			},
 			fontSize: {
 				'display-xl': ['clamp(3.25rem, 11vw, 6rem)', { lineHeight: '0.92', letterSpacing: '-0.03em' }],

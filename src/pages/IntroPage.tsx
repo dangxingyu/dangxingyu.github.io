@@ -295,13 +295,8 @@ function Publications() {
 function Footer() {
   return (
     <footer className="mx-auto max-w-page px-6 pb-20 sm:px-10 lg:px-16">
-      <div className="flex flex-col gap-3 border-t border-rule pt-8 sm:flex-row sm:items-baseline sm:justify-between">
-        <p className="text-[0.875rem] text-ink-faint">
-          {personalInfo.name} &middot; Princeton University
-        </p>
-        <a href={`mailto:${personalInfo.email}`} className="link-rule text-[0.875rem]">
-          {personalInfo.email}
-        </a>
+      <div className="border-t border-rule pt-8">
+        <p className="text-[0.875rem] text-ink-faint">Last updated {__BUILD_DATE__}</p>
       </div>
     </footer>
   );

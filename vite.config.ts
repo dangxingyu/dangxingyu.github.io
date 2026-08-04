@@ -19,6 +19,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    // Formatted here rather than in the client: passing an ISO string would
+    // hit the same `new Date('2026-08-03')`-parses-as-UTC trap that made the
+    // blog post render a day early.
+    __BUILD_DATE__: JSON.stringify(
+      new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    ),
+  },
   base: '/', // GitHub Pages user site is served from the domain root
   build: {
     outDir: 'dist',
