@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
-import { motion } from 'framer-motion';
 
 interface LayoutProps {
   children: ReactNode;
@@ -8,17 +7,9 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] relative overflow-hidden">
-      {/* Background pattern */}
-      <div className="absolute inset-0 bg-pattern pointer-events-none" />
-      
-
-      
+    <div className="paper-grain relative min-h-screen bg-paper">
       <Header />
-      
-      <main className="relative pt-16">
-        {children}
-      </main>
+      <main className="relative z-10">{children}</main>
     </div>
   );
 }

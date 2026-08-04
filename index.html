@@ -4,18 +4,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Xingyu Dang - Academic Homepage</title>
 
-  <!-- KaTeX CSS for math rendering -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
-        integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV"
-        crossorigin="anonymous">
+  <title>Xingyu Dang — PhD Student, Princeton University</title>
+  <meta name="description"
+        content="Xingyu Dang is a PhD student in Computer Science at Princeton University working with Sanjeev Arora on reasoning, interpretability and efficiency of large language models." />
+  <meta name="author" content="Xingyu Dang" />
+  <link rel="canonical" href="https://dangxingyu.github.io/" />
 
-  <!-- GitHub Pages SPA support -->
+  <link rel="icon" href="/avatar.jpg" />
+  <link rel="apple-touch-icon" href="/avatar.jpg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="profile" />
+  <meta property="og:site_name" content="Xingyu Dang" />
+  <meta property="og:title" content="Xingyu Dang — PhD Student, Princeton University" />
+  <meta property="og:description"
+        content="PhD student at Princeton CS working with Sanjeev Arora on reasoning, interpretability and efficiency of large language models." />
+  <meta property="og:url" content="https://dangxingyu.github.io/" />
+  <meta property="og:image" content="https://dangxingyu.github.io/avatar.jpg" />
+  <meta property="profile:first_name" content="Xingyu" />
+  <meta property="profile:last_name" content="Dang" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@xingyudang" />
+  <meta name="twitter:creator" content="@xingyudang" />
+  <meta name="twitter:title" content="Xingyu Dang — PhD Student, Princeton University" />
+  <meta name="twitter:description"
+        content="PhD student at Princeton CS working with Sanjeev Arora on reasoning, interpretability and efficiency of large language models." />
+  <meta name="twitter:image" content="https://dangxingyu.github.io/avatar.jpg" />
+
+  <!-- Structured data: helps Google Scholar / search surface the right person -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Xingyu Dang",
+    "url": "https://dangxingyu.github.io/",
+    "image": "https://dangxingyu.github.io/avatar.jpg",
+    "email": "mailto:xingyudang@gmail.com",
+    "jobTitle": "PhD Student",
+    "affiliation": {
+      "@type": "CollegeOrUniversity",
+      "name": "Princeton University",
+      "department": "Department of Computer Science"
+    },
+    "alumniOf": {
+      "@type": "CollegeOrUniversity",
+      "name": "Tsinghua University"
+    },
+    "knowsAbout": [
+      "Large Language Models",
+      "Reasoning",
+      "Interpretability",
+      "Machine Learning Systems"
+    ],
+    "sameAs": [
+      "https://scholar.google.com/citations?hl=en&user=_qG6rGkAAAAJ",
+      "https://github.com/dangxingyu",
+      "https://x.com/xingyudang",
+      "https://www.linkedin.com/in/xingyu-dang-87b315267/"
+    ]
+  }
+  </script>
+
+  <!-- GitHub Pages SPA support: 404.html rewrites deep links into ?/path -->
   <script type="text/javascript">
     (function(l) {
       if (l.search[1] === '/' ) {
-        var decoded = l.search.slice(1).split('&').map(function(s) { 
+        var decoded = l.search.slice(1).split('&').map(function(s) {
           return s.replace(/~and~/g, '&')
         }).join('?');
         window.history.replaceState(null, null,

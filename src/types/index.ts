@@ -12,17 +12,6 @@ export interface Publication {
   abstract?: string;
 }
 
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  technologies: string[];
-  githubUrl?: string;
-  demoUrl?: string;
-  imageUrl?: string;
-  featured: boolean;
-}
-
 export interface BlogPost {
   id: string;
   title: string;

@@ -1,9 +1,9 @@
-import { PersonalInfo, Publication, Project } from '../types';
+import { PersonalInfo, Publication } from '../types';
 
 export const personalInfo: PersonalInfo = {
   name: "Xingyu Dang",
   title: "PhD Student at Princeton University",
-  bio: "Hi! I am Xingyu Dang, a first-year PhD student at CS department of Princeton University, working with [Prof. Sanjeev Arora](https://www.cs.princeton.edu/~arora/). I graduated from Yao Class, Tsinghua University. During my undergraduate study, I'm fortunte to be work under the guidance of [Prof. Aditi Raghunathan](https://www.cs.cmu.edu/~aditirag/), [Prof. Kaifeng Lyu](https://kaifeng.ac/) and [Prof. Yang Yuan](http://people.iiis.tsinghua.edu.cn/~yuanyang/en.html). \n\n My research interests lie in improving the reasoning capability, interpretability and efficiency of large language models.",
+  bio: "Hi! I am Xingyu Dang, a first-year PhD student at CS department of Princeton University, working with [Prof. Sanjeev Arora](https://www.cs.princeton.edu/~arora/). I graduated from Yao Class, Tsinghua University. During my undergraduate study, I was fortunate to work under the guidance of [Prof. Aditi Raghunathan](https://www.cs.cmu.edu/~aditirag/), [Prof. Kaifeng Lyu](https://kaifeng.ac/) and [Prof. Yang Yuan](http://people.iiis.tsinghua.edu.cn/~yuanyang/en.html). \n\n My research interests lie in the training dynamics of large language models: how pretraining scales, and how reasoning capability emerges.",
   email: "xingyudang@gmail.com",
   avatar: "/avatar.jpg",
   social: {
@@ -14,13 +14,43 @@ export const personalInfo: PersonalInfo = {
   },
   researchInterests: [
     "Large Language Models",
+    "Pretraining & Scaling",
     "Reasoning",
-    "Interpretability",
-    "MLSys"
+    "Learning Theory"
   ]
 };
 
 export const publications: Publication[] = [
+  {
+    id: "5",
+    title: "Fantastic Pretraining Optimizers and Where to Find Them II: Hyperball Optimization",
+    authors: ["Kaiyue Wen", "Xingyu Dang", "Kaifeng Lyu", "Tengyu Ma", "Percy Liang"],
+    venue: "arXiv preprint",
+    year: 2026,
+    type: "preprint",
+    pdf: "https://arxiv.org/abs/2606.16899",
+    abstract: "Matrix-based optimizers such as Muon speed up language model pretraining, but their gains over AdamW shrink as model and data scale grow under constant decoupled weight decay. We propose Hyperball, an optimizer wrapper that fixes the Frobenius norms of weight matrices and their updates to constants. On Qwen3-style models up to 1.2B parameters, Muon+Hyperball achieves a 20-30% token-equivalent speedup over weight decay baselines, and improves learning rate transfer across widths and depths."
+  },
+  {
+    id: "4",
+    title: "The Power of Power Law: Asymmetry Enables Compositional Reasoning",
+    authors: ["Zixuan Wang", "Xingyu Dang", "Jason D. Lee", "Kaifeng Lyu"],
+    venue: "ICML 2026 (Spotlight)",
+    year: 2026,
+    type: "conference",
+    pdf: "https://arxiv.org/abs/2604.22951",
+    abstract: "Natural language data follows a power law, with most knowledge and skills appearing at very low frequency. Counter to the intuition that reweighting toward a uniform distribution helps long-tail skills, we find that across compositional reasoning tasks such as state tracking and multi-step arithmetic, training under power-law distributions consistently outperforms uniform training. We show power-law sampling induces a beneficial asymmetry in the loss landscape, letting models first acquire high-frequency skill compositions that then serve as stepping stones to rare long-tail skills."
+  },
+  {
+    id: "3",
+    title: "Escaping the Cognitive Well: Efficient Competition Math with Off-the-Shelf Models",
+    authors: ["Xingyu Dang", "Rohit Agarwal*", "Rodrigo Porto", "Anirudh Goyal", "Liam H Fowl*", "Sanjeev Arora"],
+    venue: "arXiv preprint",
+    year: 2026,
+    type: "preprint",
+    pdf: "https://arxiv.org/abs/2602.16793",
+    abstract: "We present an inference pipeline that attains best-in-class performance on IMO-style math problems at an average cost orders of magnitude below competing methods, using only general-purpose off-the-shelf models. The method targets grader failure in solver-grader pipelines, which we call the Cognitive Well: iterative refinement converging on a wrong solution that both the solver and the pipeline's internal grader consider basically correct. We address it via conjecture extraction, isolating candidate lemmas and verifying them alongside their negations in a fresh context."
+  },
   {
     id: "1",
     title: "Weight Ensembling Improves Reasoning in Language Models",
@@ -40,34 +70,5 @@ export const publications: Publication[] = [
     type: "conference",
     pdf: "https://arxiv.org/abs/2402.18510",
     abstract: "This paper studies the representational capacity gap between recurrent neural networks (RNNs) and Transformers when solving algorithmic problems. We find that despite their memory efficiency for long sequences, RNNs still cannot match Transformer performance even with enhanced chain-of-thought (CoT) prompting. The key bottleneck is RNNs' inability to perfectly retrieve information from context."
-  }
-];
-
-export const projects: Project[] = [
-  {
-    id: "1",
-    title: "NeuroFlow",
-    description: "An open-source framework for building and deploying neural network models with automatic optimization and real-time monitoring capabilities.",
-    technologies: ["Python", "PyTorch", "FastAPI", "React", "Docker"],
-    githubUrl: "https://github.com/alexchen/neuroflow",
-    demoUrl: "https://neuroflow-demo.com",
-    featured: true
-  },
-  {
-    id: "2",
-    title: "AI Ethics Toolkit",
-    description: "A comprehensive toolkit for evaluating and ensuring ethical AI practices, including bias detection, fairness metrics, and explainability tools.",
-    technologies: ["Python", "Scikit-learn", "Streamlit", "Pandas"],
-    githubUrl: "https://github.com/alexchen/ai-ethics-toolkit",
-    featured: true
-  },
-  {
-    id: "3",
-    title: "Smart City Analytics",
-    description: "Real-time urban data analytics platform for smart city applications, featuring traffic optimization, energy management, and citizen services.",
-    technologies: ["JavaScript", "Node.js", "MongoDB", "D3.js", "IoT"],
-    githubUrl: "https://github.com/alexchen/smart-city-analytics",
-    demoUrl: "https://smart-city-demo.com",
-    featured: false
   }
 ];
