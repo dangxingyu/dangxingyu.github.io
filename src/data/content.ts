@@ -24,7 +24,7 @@ export const publications: Publication[] = [
   {
     id: "6",
     title: "Learning What to Remember: Test-Time Training via Context Distillation",
-    authors: ["Zixuan Wang", "Xingyu Dang", "Rui-Jie Zhu", "Zixin Wen", "Hengyu Fu", "Wenhao Chai", "Jason D. Lee"],
+    authors: ["Zixuan Wang*", "Xingyu Dang*", "Rui-Jie Zhu", "Zixin Wen", "Hengyu Fu", "Wenhao Chai", "Jason D. Lee"],
     venue: "arXiv preprint",
     year: 2026,
     type: "preprint",
