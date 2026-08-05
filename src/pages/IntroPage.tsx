@@ -227,7 +227,7 @@ function Publications() {
                 className="border-t border-rule"
                 spotlightColor="rgba(138, 51, 36, 0.13)"
               >
-              <article className="group relative grid grid-cols-1 gap-x-10 py-7 sm:grid-cols-[5.5rem_1fr]">
+              <article className="group relative grid grid-cols-1 gap-x-10 py-6 sm:grid-cols-[5.5rem_1fr]">
                 <div className="mb-3 sm:mb-0">
                   <span className="text-micro uppercase text-ink-faint transition-colors duration-500 ease-out group-hover:text-accent">
                     {pub.year}
@@ -250,19 +250,18 @@ function Publications() {
 
                   <p className="mt-1 text-[0.9375rem] text-ink-muted">{pub.venue}</p>
 
-                  {pub.summary && (
-                    <p className="pub-summary mt-3 max-w-measure">
-                      {pub.summary}
-                    </p>
-                  )}
-
-                  {pub.pdf && (
-                    <span className="mt-3 inline-flex items-baseline gap-2 text-[0.9375rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
-                      arXiv
-                      <span className="inline-block transition-transform duration-500 ease-out group-hover:translate-x-1.5">
-                        &rarr;
-                      </span>
-                    </span>
+                  {(pub.summary || pub.pdf) && (
+                    <div className="mt-3 flex items-baseline justify-between gap-8">
+                      <p className="pub-summary max-w-measure">{pub.summary}</p>
+                      {pub.pdf && (
+                        <span className="inline-flex shrink-0 items-baseline gap-2 text-[0.9375rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
+                          arXiv
+                          <span className="inline-block transition-transform duration-500 ease-out group-hover:translate-x-1.5">
+                            &rarr;
+                          </span>
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </article>
