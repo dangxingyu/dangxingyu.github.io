@@ -22,6 +22,16 @@ export const personalInfo: PersonalInfo = {
 
 export const publications: Publication[] = [
   {
+    id: "6",
+    title: "Learning What to Remember: Test-Time Training via Context Distillation",
+    authors: ["Zixuan Wang", "Xingyu Dang", "Rui-Jie Zhu", "Zixin Wen", "Hengyu Fu", "Wenhao Chai", "Jason D. Lee"],
+    venue: "arXiv preprint",
+    year: 2026,
+    type: "preprint",
+    pdf: "https://arxiv.org/abs/2608.01672",
+    summary: "context distillation as a test-time objective"
+  },
+  {
     id: "5",
     title: "Fantastic Pretraining Optimizers and Where to Find Them II: Hyperball Optimization",
     authors: ["Kaiyue Wen", "Xingyu Dang", "Kaifeng Lyu", "Tengyu Ma", "Percy Liang"],
