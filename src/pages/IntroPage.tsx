@@ -10,7 +10,6 @@ import { TiltCard } from '../components/TiltCard';
 import { TracingBeam } from '../components/ui/tracing-beam';
 import ScrollReveal from '../components/ScrollReveal';
 import ShinyText from '../components/ShinyText';
-import GradualBlur from '../components/GradualBlur';
 
 /**
  * The bio's first paragraph carries the advisor links and must stay real
@@ -251,9 +250,9 @@ function Publications() {
 
                   <p className="mt-1.5 text-[0.9375rem] text-ink-muted">{pub.venue}</p>
 
-                  {pub.abstract && (
-                    <p className="mt-5 max-w-measure text-[0.9375rem] leading-[1.7] text-ink-faint">
-                      {pub.abstract}
+                  {pub.summary && (
+                    <p className="mt-3 max-w-measure text-[0.9375rem] leading-[1.6] text-ink-faint">
+                      {pub.summary}
                     </p>
                   )}
 
@@ -310,19 +309,6 @@ export function IntroPage() {
       <Publications />
       <Footer />
 
-      {/* Bottom-edge dissolve into paper. Resting state is the visible state:
-          no observer gates it, and it is pointer-events:none so it cannot
-          swallow clicks on the links underneath. */}
-      <GradualBlur
-        target="page"
-        position="bottom"
-        height="6.5rem"
-        strength={2}
-        divCount={6}
-        curve="ease-out"
-        overlayColor="#FAF8F4"
-        zIndex={30}
-      />
     </>
   );
 }

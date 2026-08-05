@@ -29,7 +29,7 @@ export const publications: Publication[] = [
     year: 2026,
     type: "preprint",
     pdf: "https://arxiv.org/abs/2606.16899",
-    abstract: "Matrix-based optimizers such as Muon speed up language model pretraining, but their gains over AdamW shrink as model and data scale grow under constant decoupled weight decay. We propose Hyperball, an optimizer wrapper that fixes the Frobenius norms of weight matrices and their updates to constants. On Qwen3-style models up to 1.2B parameters, Muon+Hyperball achieves a 20-30% token-equivalent speedup over weight decay baselines, and improves learning rate transfer across widths and depths."
+    summary: "weight-normalized training"
   },
   {
     id: "4",
@@ -39,7 +39,7 @@ export const publications: Publication[] = [
     year: 2026,
     type: "conference",
     pdf: "https://arxiv.org/abs/2604.22951",
-    abstract: "Natural language data follows a power law, with most knowledge and skills appearing at very low frequency. Counter to the intuition that reweighting toward a uniform distribution helps long-tail skills, we find that across compositional reasoning tasks such as state tracking and multi-step arithmetic, training under power-law distributions consistently outperforms uniform training. We show power-law sampling induces a beneficial asymmetry in the loss landscape, letting models first acquire high-frequency skill compositions that then serve as stepping stones to rare long-tail skills."
+    summary: "why power-law data beats uniformly reweighted data for compositional reasoning"
   },
   {
     id: "3",
@@ -49,7 +49,7 @@ export const publications: Publication[] = [
     year: 2026,
     type: "preprint",
     pdf: "https://arxiv.org/abs/2602.16793",
-    abstract: "We present an inference pipeline that attains best-in-class performance on IMO-style math problems at an average cost orders of magnitude below competing methods, using only general-purpose off-the-shelf models. The method targets grader failure in solver-grader pipelines, which we call the Cognitive Well: iterative refinement converging on a wrong solution that both the solver and the pipeline's internal grader consider basically correct. We address it via conjecture extraction, isolating candidate lemmas and verifying them alongside their negations in a fresh context."
+    summary: "SOTA IMO problem solver scaffolding"
   },
   {
     id: "1",
@@ -59,7 +59,7 @@ export const publications: Publication[] = [
     year: 2025,
     type: "conference",
     pdf: "https://arxiv.org/abs/2504.10478",
-    abstract: "This work investigates failure modes in reasoning model training where generation diversity begins to collapse, leading to poor test-time scaling. We find that interpolating weights between the latest supervised fine-tuning (SFT) checkpoint and earlier checkpoints (called WiSE-FT) can significantly recover generation diversity and improve test-time performance."
+    summary: "why increasing top-1 hurts top-k on SFT & RL, and how to fix it"
   },
   {
     id: "2",
@@ -69,6 +69,6 @@ export const publications: Publication[] = [
     year: 2024,
     type: "conference",
     pdf: "https://arxiv.org/abs/2402.18510",
-    abstract: "This paper studies the representational capacity gap between recurrent neural networks (RNNs) and Transformers when solving algorithmic problems. We find that despite their memory efficiency for long sequences, RNNs still cannot match Transformer performance even with enhanced chain-of-thought (CoT) prompting. The key bottleneck is RNNs' inability to perfectly retrieve information from context."
+    summary: "representation gap between RNNs and Transformers (both with CoT!)"
   }
 ];

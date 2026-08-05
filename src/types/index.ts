@@ -9,7 +9,8 @@ export interface Publication {
   type: 'conference' | 'journal' | 'preprint';
   doi?: string;
   pdf?: string;
-  abstract?: string;
+  /** One line, in the author's own voice — not the paper abstract. */
+  summary?: string;
 }
 
 export interface BlogPost {
