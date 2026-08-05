@@ -27,10 +27,13 @@ jobs:
         uses: pnpm/action-setup@v4
 
 
+      # Must stay >= 22.13: the pnpm version pinned in package.json refuses to
+      # start on anything older (it requires node:sqlite). Bumping the pnpm pin
+      # without bumping this is what broke the 1f9a98b deploy.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "pnpm"
           
       - name: Install dependencies

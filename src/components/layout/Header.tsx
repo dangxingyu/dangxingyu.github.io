@@ -52,7 +52,7 @@ export function Header() {
                 key={item.name}
                 to={item.href}
                 aria-current={isActive ? 'page' : undefined}
-                className={`relative pb-1 text-[0.9375rem] transition-colors duration-300 ease-out ${
+                className={`relative pb-1 font-display text-[0.9375rem] transition-colors duration-300 ease-out ${
                   isActive ? 'text-ink' : 'text-ink-faint hover:text-ink'
                 }`}
               >
