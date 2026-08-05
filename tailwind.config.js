@@ -57,7 +57,7 @@ module.exports = {
 				page: '72rem',
 			},
 			spacing: {
-				section: 'clamp(4.5rem, 10vw, 8rem)',
+				section: 'clamp(3.25rem, 6vw, 5.5rem)',
 			},
 			transitionTimingFunction: {
 				// Exponential ease-out: quick departure, long settle.

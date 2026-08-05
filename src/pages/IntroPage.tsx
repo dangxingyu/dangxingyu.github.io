@@ -59,7 +59,7 @@ function Hero() {
   return (
     <section
       ref={proximityRef}
-      className="relative mx-auto max-w-page px-6 pb-section pt-36 sm:px-10 lg:px-16 lg:pt-44"
+      className="relative mx-auto max-w-page px-6 pb-section pt-28 sm:px-10 lg:px-16 lg:pt-36"
     >
       {/* Animated thread field. Purely decorative: it sits behind the content,
           is pointer-transparent to everything except its own mouse tracking,
@@ -102,7 +102,7 @@ function Hero() {
         <p className="text-[1.0625rem] text-ink-muted">{personalInfo.title}</p>
       </div>
 
-      <div className="relative mt-14 grid grid-cols-1 gap-x-16 gap-y-12 lg:grid-cols-12">
+      <div className="relative mt-12 grid grid-cols-1 gap-x-16 gap-y-10 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <RichText content={BIO_LEAD} className="prose-editorial max-w-measure text-body" />
 
@@ -125,7 +125,7 @@ function Hero() {
 
           {/* Icon-only links, so each one carries its own accessible name via
               aria-label; the title attribute gives sighted users the tooltip. */}
-          <ul className="mt-10 flex flex-wrap items-center gap-3">
+          <ul className="mt-8 flex flex-wrap items-center gap-3">
             {CONTACTS.map(({ label, href, Icon }) => (
               <li key={label}>
                 <a
@@ -167,7 +167,7 @@ function ResearchInterests() {
   return (
     <section className="mx-auto max-w-page px-6 sm:px-10 lg:px-16">
       <Reveal>
-        <div className="border-y border-rule py-8">
+        <div className="border-y border-rule py-6">
           <ul className="flex flex-wrap items-baseline gap-x-4 gap-y-3">
             {personalInfo.researchInterests.map((interest, i) => (
               <li key={interest} className="flex items-baseline gap-4">
@@ -191,7 +191,7 @@ function ResearchInterests() {
 /** Author list with the site owner set in ink and everyone else muted. */
 function Authors({ authors }: { authors: string[] }) {
   return (
-    <p className="mt-2.5 text-[0.9375rem] text-ink-faint">
+    <p className="mt-2 text-[0.9375rem] text-ink-faint">
       {authors.map((a, i) => {
         const isOwner = a.replace(/\*/g, '').trim() === AUTHOR;
         return (
@@ -218,7 +218,7 @@ function Publications() {
         </h2>
       </Reveal>
 
-      <TracingBeam className="mt-14 max-w-none">
+      <TracingBeam className="mt-10 max-w-none">
       <ol>
         {publications.map((pub, i) => (
           <li key={pub.id}>
@@ -227,7 +227,7 @@ function Publications() {
                 className="border-t border-rule"
                 spotlightColor="rgba(138, 51, 36, 0.13)"
               >
-              <article className="group relative grid grid-cols-1 gap-x-10 py-10 sm:grid-cols-[5.5rem_1fr]">
+              <article className="group relative grid grid-cols-1 gap-x-10 py-7 sm:grid-cols-[5.5rem_1fr]">
                 <div className="mb-3 sm:mb-0">
                   <span className="text-micro uppercase text-ink-faint transition-colors duration-500 ease-out group-hover:text-accent">
                     {pub.year}
@@ -248,16 +248,16 @@ function Publications() {
 
                   <Authors authors={pub.authors} />
 
-                  <p className="mt-1.5 text-[0.9375rem] text-ink-muted">{pub.venue}</p>
+                  <p className="mt-1 text-[0.9375rem] text-ink-muted">{pub.venue}</p>
 
                   {pub.summary && (
-                    <p className="mt-3 max-w-measure text-[0.9375rem] leading-[1.6] text-ink-faint">
+                    <p className="pub-summary mt-3 max-w-measure">
                       {pub.summary}
                     </p>
                   )}
 
                   {pub.pdf && (
-                    <span className="mt-5 inline-flex items-baseline gap-2 text-[0.9375rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
+                    <span className="mt-3 inline-flex items-baseline gap-2 text-[0.9375rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
                       arXiv
                       <span className="inline-block transition-transform duration-500 ease-out group-hover:translate-x-1.5">
                         &rarr;
@@ -275,7 +275,7 @@ function Publications() {
 
       {personalInfo.social.scholar && (
         <Reveal>
-          <div className="border-t border-rule pt-10">
+          <div className="border-t border-rule pt-8">
             <a
               href={personalInfo.social.scholar}
               target="_blank"

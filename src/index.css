@@ -251,3 +251,17 @@
   }
 }
 
+
+@layer components {
+  /* The one-line summary sits between the author list and the arXiv link, and
+     at the shared 0.9375rem sans it was typographically identical to both.
+     Moving it into Fraunces gives it a different voice outright, then size and
+     ink weight separate it from the metadata rows around it.
+
+     opsz is set for text, not display: the global .font-display uses opsz 120,
+     which is drawn for the 96px headline and renders far too fine at 17px. */
+  .pub-summary {
+    @apply font-display text-[1.0625rem] leading-[1.55] text-ink-muted;
+    font-variation-settings: 'SOFT' 24, 'WONK' 0, 'opsz' 20;
+  }
+}
