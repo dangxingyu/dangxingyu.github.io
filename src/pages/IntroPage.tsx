@@ -23,6 +23,19 @@ const BIO_STATEMENT = BIO_PARAGRAPHS.slice(1).join(' ');
 /** Rust accent (#8A3324) normalised for the Threads shader. */
 const THREAD_COLOR: [number, number, number] = [0.541, 0.2, 0.141];
 
+/**
+ * The shader draws its lines around the canvas's vertical centre — see
+ * `y = 0.5 + (perc - 0.5) * distance` in Threads.tsx — so with distance 0.32
+ * they exist only between roughly 34% and 66% of this container's height.
+ * Nothing outside that band can be revealed no matter how the mask is shaped.
+ *
+ * Measured against this container, the bio starts at 61%, so the whole overlap
+ * with the text was the band's bottom sliver. Fading out by 60% keeps the field
+ * across the name (30-44%) and the empty middle, and clears the bio entirely.
+ */
+const MASK =
+  'radial-gradient(100% 26% at 62% 40%, #000 0%, rgba(0,0,0,0.5) 45%, transparent 78%)';
+
 const AUTHOR = 'Xingyu Dang';
 
 /**
@@ -67,12 +80,16 @@ function Hero() {
           hard edge. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 -top-10 h-[620px] opacity-70"
+        className="pointer-events-none absolute inset-x-0 -top-10 h-[620px] opacity-[0.68]"
         style={{
-          maskImage:
-            'radial-gradient(115% 78% at 62% 34%, #000 12%, rgba(0,0,0,0.55) 48%, transparent 82%)',
-          WebkitMaskImage:
-            'radial-gradient(115% 78% at 62% 34%, #000 12%, rgba(0,0,0,0.55) 48%, transparent 82%)',
+          // Measured against the hero's own boxes: the name occupies 30-44% of
+          // this container and the bio 61-85%. The old mask was centred at 34%
+          // with a 78% vertical radius, so its densest point sat on the name and
+          // it still had reach at 95% — across the whole bio. Centring at 10%
+          // with a 44% radius puts every visible thread above the name's
+          // baseline and clear of the text below it.
+          maskImage: MASK,
+          WebkitMaskImage: MASK,
         }}
       >
         <Threads
