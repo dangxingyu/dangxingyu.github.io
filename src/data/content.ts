@@ -1,9 +1,9 @@
-import { PersonalInfo, Publication } from '../types';
+import { PersonalInfo, Publication, Talk } from '../types';
 
 export const personalInfo: PersonalInfo = {
   name: "Xingyu Dang",
   title: "PhD Student at Princeton University",
-  bio: "Hi! I am Xingyu Dang, a first-year PhD student at CS department of Princeton University, working with [Prof. Sanjeev Arora](https://www.cs.princeton.edu/~arora/). I graduated from Yao Class, Tsinghua University. During my undergraduate study, I was fortunate to work under the guidance of [Prof. Aditi Raghunathan](https://www.cs.cmu.edu/~aditirag/), [Prof. Kaifeng Lyu](https://kaifeng.ac/) and [Prof. Yang Yuan](http://people.iiis.tsinghua.edu.cn/~yuanyang/en.html). \n\n My research interests lie in large language models: how pretraining scales, how capabilities such as reasoning emerge, and how algorithms can make efficient use of them.",
+  bio: "Hi! I am Xingyu Dang, a second-year PhD student at CS department of Princeton University, working with [Prof. Sanjeev Arora](https://www.cs.princeton.edu/~arora/). I graduated from Yao Class, Tsinghua University. During my undergraduate study, I was fortunate to work under the guidance of [Prof. Aditi Raghunathan](https://www.cs.cmu.edu/~aditirag/), [Prof. Kaifeng Lyu](https://kaifeng.ac/) and [Prof. Yang Yuan](http://people.iiis.tsinghua.edu.cn/~yuanyang/en.html). \n\n My research interests lie in large language models: how pretraining scales, how capabilities such as reasoning emerge, and how algorithms can make efficient use of them.",
   email: "xingyudang@gmail.com",
   avatar: "/avatar.jpg",
   social: {
@@ -54,7 +54,7 @@ export const publications: Publication[] = [
   {
     id: "3",
     title: "Escaping the Cognitive Well: Efficient Competition Math with Off-the-Shelf Models",
-    authors: ["Xingyu Dang", "Rohit Agarwal*", "Rodrigo Porto", "Anirudh Goyal", "Liam H Fowl*", "Sanjeev Arora"],
+    authors: ["Xingyu Dang*", "Rohit Agarwal*", "Rodrigo Porto", "Anirudh Goyal", "Liam H Fowl*", "Sanjeev Arora"],
     venue: "arXiv preprint",
     year: 2026,
     type: "preprint",
@@ -80,5 +80,18 @@ export const publications: Publication[] = [
     type: "conference",
     pdf: "https://arxiv.org/abs/2402.18510",
     summary: "representation gap between RNNs and Transformers (both with CoT!)"
+  }
+];
+
+export const talks: Talk[] = [
+  {
+    id: "pli-hyperball-2026",
+    title: "Hyperball Optimizer",
+    host: "Princeton Language and Intelligence",
+    series: "Seminar Lunch Series",
+    date: "Feb 5, 2026",
+    year: 2026,
+    url: "https://pli.princeton.edu/events/2026/hyperball-optimizer",
+    linkLabel: "PLI"
   }
 ];

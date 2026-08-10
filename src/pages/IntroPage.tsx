@@ -1,5 +1,5 @@
 import { ReactNode, useRef } from 'react';
-import { personalInfo, publications } from '../data/content';
+import { personalInfo, publications, talks } from '../data/content';
 import { siteConfig } from '../config/siteConfig';
 import { RichText } from '../components/RichText';
 import { MailIcon, ScholarIcon, GithubIcon, XIcon, LinkedinIcon } from '../components/icons';
@@ -251,7 +251,7 @@ function Publications() {
                   <p className="mt-1 text-[0.9375rem] text-ink-muted">{pub.venue}</p>
 
                   {(pub.summary || pub.pdf) && (
-                    <div className="mt-3 flex items-baseline justify-between gap-8">
+                    <div className="pub-summary-row mt-3.5 flex items-baseline justify-between gap-8">
                       <p className="pub-summary max-w-measure">{pub.summary}</p>
                       {pub.pdf && (
                         <span className="inline-flex shrink-0 items-baseline gap-2 text-[0.9375rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
@@ -290,6 +290,68 @@ function Publications() {
   );
 }
 
+function Talks() {
+  if (!siteConfig.sections.talks || talks.length === 0) return null;
+
+  return (
+    <section className="mx-auto max-w-page px-6 pb-section sm:px-10 lg:pl-28 lg:pr-16">
+      <Reveal>
+        <h2 className="font-display text-display-md font-medium text-ink">
+          <ShinyText text="Talks" className="text-ink" speed={3.2} delay={6} />
+        </h2>
+      </Reveal>
+
+      <ol className="mt-10">
+        {talks.map((talk) => (
+          <li key={talk.id}>
+            <Reveal>
+              <SpotlightCard className="border-t border-rule" spotlightColor="rgba(138, 51, 36, 0.13)">
+                <article className="group relative grid grid-cols-1 gap-x-10 py-6 sm:grid-cols-[5.5rem_1fr]">
+                  <div className="mb-3 sm:mb-0">
+                    <span className="text-micro uppercase text-ink-faint transition-colors duration-500 ease-out group-hover:text-accent">
+                      {talk.year}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="max-w-[52ch] text-title text-ink transition-colors duration-500 ease-out group-hover:text-accent">
+                      {talk.url ? (
+                        <a href={talk.url} target="_blank" rel="noopener noreferrer">
+                          <span className="absolute inset-0" aria-hidden="true" />
+                          {talk.title}
+                        </a>
+                      ) : (
+                        talk.title
+                      )}
+                    </h3>
+
+                    <p className="mt-2 text-[0.9375rem] text-ink-faint">{talk.date}</p>
+
+                    <div className="pub-summary-row mt-3.5 flex items-baseline justify-between gap-8">
+                      <p className="pub-summary max-w-measure">
+                        {talk.host}
+                        {talk.series && <span className="text-accent/70"> &middot; {talk.series}</span>}
+                      </p>
+                      {talk.url && (
+                        <span className="inline-flex shrink-0 items-baseline gap-2 text-[0.9375rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
+                          {talk.linkLabel ?? 'Details'}
+                          <span className="inline-block transition-transform duration-500 ease-out group-hover:translate-x-1.5">
+                            &rarr;
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              </SpotlightCard>
+            </Reveal>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 function Footer() {
   return (
     <footer className="mx-auto max-w-page px-6 pb-20 sm:px-10 lg:px-16">
@@ -306,6 +368,7 @@ export function IntroPage() {
       {siteConfig.sections.hero && <Hero />}
       <ResearchInterests />
       <Publications />
+      <Talks />
       <Footer />
 
     </>

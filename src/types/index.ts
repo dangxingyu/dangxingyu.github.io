@@ -13,6 +13,20 @@ export interface Publication {
   summary?: string;
 }
 
+export interface Talk {
+  id: string;
+  title: string;
+  host: string;
+  /** Seminar or event series, when the venue runs one. */
+  series?: string;
+  /** Display string, not ISO: authored for reading, so it never has to be
+      parsed back out and cannot hit the UTC-midnight off-by-one. */
+  date: string;
+  year: number;
+  url?: string;
+  linkLabel?: string;
+}
+
 export interface BlogPost {
   id: string;
   title: string;

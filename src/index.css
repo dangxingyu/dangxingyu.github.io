@@ -253,15 +253,28 @@
 
 
 @layer components {
-  /* The one-line summary sits between the author list and the arXiv link, and
-     at the shared 0.9375rem sans it was typographically identical to both.
-     Moving it into Fraunces gives it a different voice outright, then size and
-     ink weight separate it from the metadata rows around it.
+  /* The summary is the one line that tells a scanning reader what the paper
+     is, so it carries the accent — the only body text on the page that does.
+     A dark band was considered and rejected: one is a pull quote, six is a
+     striped page.
+
+     The wash is applied to the whole row, arXiv link included, so it reads as
+     a single strip rather than a chip floating next to a link. Contrast is
+     8.4:1 for the summary and 5.9:1 for the link against it.
 
      opsz is set for text, not display: the global .font-display uses opsz 120,
-     which is drawn for the 96px headline and renders far too fine at 17px. */
+     which is drawn for the 96px headline and renders far too fine here. */
+  .pub-summary-row {
+    @apply -mx-4 rounded-[3px] bg-accent-wash/60 px-4 py-2.5;
+    transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .group:hover .pub-summary-row {
+    @apply bg-accent-wash;
+  }
+
   .pub-summary {
-    @apply font-display text-[1.0625rem] leading-[1.55] text-ink-muted;
-    font-variation-settings: 'SOFT' 24, 'WONK' 0, 'opsz' 20;
+    @apply font-display text-[1.125rem] leading-[1.5] text-accent;
+    font-variation-settings: 'SOFT' 30, 'WONK' 0, 'opsz' 22;
   }
 }
