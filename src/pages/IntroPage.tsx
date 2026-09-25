@@ -7,7 +7,6 @@ import VariableProximity from '../components/VariableProximity';
 import Threads from '../components/Threads';
 import SpotlightCard from '../components/SpotlightCard';
 import { TiltCard } from '../components/TiltCard';
-import { TracingBeam } from '../components/ui/tracing-beam';
 import ScrollReveal from '../components/ScrollReveal';
 import ShinyText from '../components/ShinyText';
 
@@ -116,7 +115,7 @@ function Hero() {
 
       <div className="relative mt-7 flex items-center gap-5">
         <span className="h-px w-14 shrink-0 bg-accent" aria-hidden="true" />
-        <p className="text-[1.0625rem] text-ink-muted">{personalInfo.title}</p>
+        <p className="text-base text-ink-muted">{personalInfo.title}</p>
       </div>
 
       <div className="relative mt-12 grid grid-cols-1 gap-x-16 gap-y-10 lg:grid-cols-12">
@@ -135,7 +134,7 @@ function Hero() {
                  twMerge only dedupes it against another arbitrary one — a named
                  key like `text-body` loses and the statement renders at display
                  size, competing with the h1. */
-              textClassName="font-text text-[1.0625rem] leading-[1.75] font-normal text-ink-muted"
+              textClassName="font-text text-base leading-[1.7] font-normal text-ink-muted"
             >
               {paragraph}
             </ScrollReveal>
@@ -194,7 +193,7 @@ function ResearchInterests() {
                     /
                   </span>
                 )}
-                <span className="font-display text-[1.0625rem] text-ink-muted">
+                <span className="font-display text-base text-ink-muted">
                   {interest}
                 </span>
               </li>
@@ -209,7 +208,7 @@ function ResearchInterests() {
 /** Author list with the site owner set in ink and everyone else muted. */
 function Authors({ authors }: { authors: string[] }) {
   return (
-    <p className="mt-2 text-[0.9375rem] text-ink-faint">
+    <p className="mt-1 text-[0.875rem] text-ink-faint">
       {authors.map((a, i) => {
         const isOwner = a.replace(/\*/g, '').trim() === AUTHOR;
         return (
@@ -226,18 +225,15 @@ function Authors({ authors }: { authors: string[] }) {
 function Publications() {
   if (!siteConfig.sections.publications) return null;
 
-  // The tracing beam parks itself at -left-4 / md:-left-20, so the section has
-  // to leave a left gutter at lg+ or the beam clips off-screen.
   return (
-    <section className="mx-auto max-w-page px-6 py-section sm:px-10 lg:pl-28 lg:pr-16">
+    <section className="mx-auto max-w-page px-6 py-section sm:px-10 lg:px-16">
       <Reveal>
         <h2 className="font-display text-display-md font-medium text-ink">
           <ShinyText text="Selected Publications" className="text-ink" speed={3.2} delay={5} />
         </h2>
       </Reveal>
 
-      <TracingBeam className="mt-10 max-w-none">
-      <ol>
+      <ol className="mt-8 grid grid-cols-1 gap-x-10 lg:grid-cols-2">
         {publications.map((pub, i) => (
           <li key={pub.id}>
             <Reveal>
@@ -245,8 +241,8 @@ function Publications() {
                 className="border-t border-rule"
                 spotlightColor="rgba(138, 51, 36, 0.13)"
               >
-              <article className="group relative grid grid-cols-1 gap-x-10 py-6 sm:grid-cols-[5.5rem_1fr]">
-                <div className="mb-3 sm:mb-0">
+              <article className="group relative grid min-w-0 grid-cols-1 gap-x-6 py-4 sm:grid-cols-[3.75rem_1fr]">
+                <div className="mb-2 sm:mb-0">
                   <span className="text-micro uppercase text-ink-faint transition-colors duration-500 ease-out group-hover:text-accent">
                     {pub.year}
                   </span>
@@ -266,8 +262,8 @@ function Publications() {
 
                   <Authors authors={pub.authors} />
 
-                  <div className="mt-2 space-y-2 text-[0.9375rem] text-ink-muted">
-                    <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1.5">
+                  <div className="mt-1 space-y-1 text-[0.875rem] text-ink-muted">
+                    <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                       <span>{pub.venue}</span>
                       {pub.presentation && pub.presentation !== 'Poster' && (
                         <span className="pub-distinction">
@@ -276,7 +272,7 @@ function Publications() {
                       )}
                     </p>
                     {pub.award && (
-                      <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1.5">
+                      <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                         <span>{pub.award.venue}</span>
                         <span className="pub-distinction">{pub.award.label}</span>
                       </p>
@@ -284,7 +280,7 @@ function Publications() {
                   </div>
 
                   {(pub.summary || pub.pdf) && (
-                    <div className="pub-summary-row mt-3.5 flex items-baseline justify-between gap-8">
+                    <div className="pub-summary-row mt-2 flex items-baseline justify-between gap-4">
                       <p className="pub-summary max-w-measure">{pub.summary}</p>
                       {pub.pdf && (
                         <span className="inline-flex shrink-0 items-baseline gap-2 text-[0.9375rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
@@ -303,7 +299,6 @@ function Publications() {
           </li>
         ))}
       </ol>
-      </TracingBeam>
 
       {personalInfo.social.scholar && (
         <Reveal>
@@ -339,8 +334,8 @@ function Talks() {
           <li key={talk.id}>
             <Reveal>
               <SpotlightCard className="border-t border-rule" spotlightColor="rgba(138, 51, 36, 0.13)">
-                <article className="group relative grid grid-cols-1 gap-x-10 py-6 sm:grid-cols-[5.5rem_1fr]">
-                  <div className="mb-3 sm:mb-0">
+                <article className="group relative grid grid-cols-1 gap-x-6 py-4 sm:grid-cols-[3.75rem_1fr]">
+                  <div className="mb-2 sm:mb-0">
                     <span className="text-micro uppercase text-ink-faint transition-colors duration-500 ease-out group-hover:text-accent">
                       {talk.year}
                     </span>
@@ -358,15 +353,15 @@ function Talks() {
                       )}
                     </h3>
 
-                    <p className="mt-2 text-[0.9375rem] text-ink-faint">{talk.date}</p>
+                    <p className="mt-1 text-[0.875rem] text-ink-faint">{talk.date}</p>
 
-                    <div className="pub-summary-row mt-3.5 flex items-baseline justify-between gap-8">
+                    <div className="pub-summary-row mt-2 flex items-baseline justify-between gap-4">
                       <p className="pub-summary max-w-measure">
                         {talk.host}
                         {talk.series && <span className="text-accent/70"> &middot; {talk.series}</span>}
                       </p>
                       {talk.url && (
-                        <span className="inline-flex shrink-0 items-baseline gap-2 text-[0.9375rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
+                        <span className="inline-flex shrink-0 items-baseline gap-2 text-[0.875rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
                           {talk.linkLabel ?? 'Details'}
                           <span className="inline-block transition-transform duration-500 ease-out group-hover:translate-x-1.5">
                             &rarr;
@@ -389,7 +384,7 @@ function Footer() {
   return (
     <footer className="mx-auto max-w-page px-6 pb-20 sm:px-10 lg:px-16">
       <div className="border-t border-rule pt-8">
-        <p className="text-[0.875rem] text-ink-faint">Last updated {__BUILD_DATE__}</p>
+        <p className="text-xs text-ink-faint">Last updated {__BUILD_DATE__}</p>
       </div>
     </footer>
   );

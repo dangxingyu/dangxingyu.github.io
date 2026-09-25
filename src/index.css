@@ -254,18 +254,19 @@
 
 @layer components {
   .pub-distinction {
-    @apply inline-block rounded-[3px] bg-accent px-2 py-0.5 font-semibold text-paper-raised;
+    @apply inline-block rounded-[3px] bg-accent-wash px-1.5 py-0.5 font-semibold text-accent;
   }
 
-  /* Distinctions carry the strong accent; summaries use a neutral tint so
-     the two kinds of information remain visually distinct. The band includes
-     the arXiv link, keeping the whole summary on one surface. */
+  /* Distinctions use a light accent wash so awards stay findable without
+     competing with the title. Summaries use a neutral tint so the two kinds
+     of information remain visually distinct. The band includes the arXiv
+     link, keeping the whole summary on one surface. */
   .pub-summary-row {
     /* Bleeds left only. A symmetric -mx-4 pushed the row 16px past
        SpotlightCard, which is overflow:hidden to contain its spotlight
        gradient — so the band's right end was clipped, and the arXiv arrow,
        sitting exactly on that boundary, disappeared as it travelled on hover. */
-    @apply -ml-4 rounded-[3px] bg-ink/[0.035] px-4 py-2.5;
+    @apply -ml-3 rounded-[3px] bg-ink/[0.035] px-3 py-1.5;
     transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
@@ -274,7 +275,7 @@
   }
 
   .pub-summary {
-    @apply font-display text-[1.125rem] leading-[1.5] text-ink-muted;
+    @apply font-display text-[1rem] leading-[1.4] text-ink-muted;
     /* Use text-size optical settings rather than the headline's opsz 120. */
     font-variation-settings: 'SOFT' 30, 'WONK' 0, 'opsz' 22;
   }

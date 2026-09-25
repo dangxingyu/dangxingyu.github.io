@@ -46,11 +46,11 @@ module.exports = {
 				],
 			},
 			fontSize: {
-				'display-xl': ['clamp(3.25rem, 11vw, 6rem)', { lineHeight: '0.92', letterSpacing: '-0.03em' }],
-				'display-md': ['clamp(1.875rem, 4.5vw, 2.5rem)', { lineHeight: '1.08', letterSpacing: '-0.02em' }],
-				'title': ['1.375rem', { lineHeight: '1.32', letterSpacing: '-0.012em' }],
-				'body': ['1.0625rem', { lineHeight: '1.75' }],
-				'micro': ['0.8125rem', { lineHeight: '1.5', letterSpacing: '0.06em' }],
+				'display-xl': ['clamp(2.75rem, 8.5vw, 4.5rem)', { lineHeight: '0.94', letterSpacing: '-0.03em' }],
+				'display-md': ['clamp(1.625rem, 3.6vw, 2.125rem)', { lineHeight: '1.08', letterSpacing: '-0.02em' }],
+				'title': ['1.2rem', { lineHeight: '1.3', letterSpacing: '-0.01em' }],
+				'body': ['1rem', { lineHeight: '1.7' }],
+				'micro': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.06em' }],
 			},
 			maxWidth: {
 				measure: '68ch', // body measure, inside the 65-75ch band

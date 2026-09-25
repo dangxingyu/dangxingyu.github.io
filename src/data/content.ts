@@ -3,7 +3,7 @@ import { PersonalInfo, Publication, Talk } from '../types';
 export const personalInfo: PersonalInfo = {
   name: "Xingyu Dang",
   title: "PhD Student at Princeton University",
-  bio: "Hi! I am Xingyu Dang, a second-year PhD student at CS department of Princeton University, working with [Prof. Sanjeev Arora](https://www.cs.princeton.edu/~arora/). I graduated from Yao Class, Tsinghua University. During my undergraduate study, I was fortunate to work under the guidance of [Prof. Aditi Raghunathan](https://www.cs.cmu.edu/~aditirag/), [Prof. Kaifeng Lyu](https://kaifeng.ac/) and [Prof. Yang Yuan](http://people.iiis.tsinghua.edu.cn/~yuanyang/en.html). \n\n My research interests lie in large language models: how pretraining scales, how capabilities such as reasoning emerge, and how algorithms can make efficient use of them.\n\nI interned at ByteDance Seed last summer, building pretraining scaling ladders.",
+  bio: "Hi! I am Xingyu Dang, a second-year PhD student at CS department of Princeton University, working with [Prof. Sanjeev Arora](https://www.cs.princeton.edu/~arora/). I graduated from Yao Class, Tsinghua University. During my undergraduate study, I was fortunate to work under the guidance of [Prof. Aditi Raghunathan](https://www.cs.cmu.edu/~aditirag/), [Prof. Kaifeng Lyu](https://kaifeng.ac/) and [Prof. Yang Yuan](http://people.iiis.tsinghua.edu.cn/~yuanyang/en.html). \n\n My research interests lie in large language models: how pretraining scales, how capabilities such as reasoning emerge, and how algorithms can make efficient use of them.\n\nI interned at ByteDance Seed in the summer of 2026, building pretraining scaling ladders.",
   email: "xingyudang@gmail.com",
   avatar: "/avatar.jpg",
   social: {

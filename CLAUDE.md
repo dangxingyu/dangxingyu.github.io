@@ -84,9 +84,13 @@ in `src/index.css`.
 - Both application fonts are self-hosted through `@fontsource-variable/*`.
   The Chinese name uses the explicit `font-cjk` system-font stack.
 
-Publication and talk rows use SpotlightCard. Their summary band has a left-only
-bleed so the card's `overflow-hidden` does not clip the right edge or link arrow.
-The publication section reserves a left gutter for TracingBeam.
+Publication and talk rows use SpotlightCard. Publications use a two-column
+compact index on desktop and collapse to one column below the `lg` breakpoint.
+Each row keeps a narrow year column, condensed metadata, and a smaller neutral
+summary band. The summary band has a left-only bleed so the card's
+`overflow-hidden` does not clip the right edge or link arrow.
+Presentation and award labels use the light accent wash with rust text, keeping
+them visible without competing with the publication titles.
 
 ### Motion and interaction
 
