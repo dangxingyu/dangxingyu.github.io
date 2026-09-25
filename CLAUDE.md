@@ -64,7 +64,8 @@ keep Vite's `base: '/'` and the 404 shim's `pathSegmentsToKeep = 0` aligned.
 
 `RichText.tsx` supports paragraph breaks and `[label](href)` links only. The
 hero renders the first bio paragraph through RichText to preserve advisor links;
-remaining paragraphs are joined and passed to ScrollReveal as plain text.
+remaining paragraphs are passed separately to ScrollReveal as plain text,
+preserving their paragraph breaks.
 Do not put Markdown links in those later paragraphs without adapting the renderer.
 
 ### Design system

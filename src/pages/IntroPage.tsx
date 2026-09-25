@@ -13,12 +13,12 @@ import ShinyText from '../components/ShinyText';
 
 /**
  * The bio's first paragraph carries the advisor links and must stay real
- * markup; the closing statement is plain prose, so it gets the word-by-word
- * scroll reveal (which only splits plain-string children).
+ * markup; later paragraphs are plain prose, so each gets a word-by-word
+ * scroll reveal while retaining its paragraph break.
  */
 const BIO_PARAGRAPHS = personalInfo.bio.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 const BIO_LEAD = BIO_PARAGRAPHS[0] ?? personalInfo.bio;
-const BIO_STATEMENT = BIO_PARAGRAPHS.slice(1).join(' ');
+const BIO_STATEMENTS = BIO_PARAGRAPHS.slice(1);
 
 /** Rust accent (#8A3324) normalised for the Threads shader. */
 const THREAD_COLOR: [number, number, number] = [0.541, 0.2, 0.141];
@@ -123,8 +123,9 @@ function Hero() {
         <div className="lg:col-span-7">
           <RichText content={BIO_LEAD} className="prose-editorial max-w-measure text-body" />
 
-          {BIO_STATEMENT && (
+          {BIO_STATEMENTS.map((paragraph) => (
             <ScrollReveal
+              key={paragraph}
               baseRotation={0}
               baseOpacity={0.28}
               blurStrength={5}
@@ -136,9 +137,9 @@ function Hero() {
                  size, competing with the h1. */
               textClassName="font-text text-[1.0625rem] leading-[1.75] font-normal text-ink-muted"
             >
-              {BIO_STATEMENT}
+              {paragraph}
             </ScrollReveal>
-          )}
+          ))}
 
           {/* Icon-only links, so each one carries its own accessible name via
               aria-label; the title attribute gives sighted users the tooltip. */}
