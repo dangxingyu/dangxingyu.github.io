@@ -1,313 +1,80 @@
 # GitHub Pages 部署指南
 
-本指南将帮助您将 Tech Homepage 网站部署到 GitHub Pages。
+本仓库对应用户站点 [dangxingyu.github.io](https://dangxingyu.github.io/)。部署配置以 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)、[`package.json`](package.json) 和 [`vite.config.ts`](vite.config.ts) 为准。
 
-## 🚀 部署方式
+## 当前工作流
 
-### 方式一：GitHub Actions 自动部署（推荐）
+`Deploy to GitHub Pages` 在推送 `master` 时自动触发，也支持在 GitHub Actions 页面通过 `workflow_dispatch` 手动运行。当前没有 pull request 触发器。
 
-#### 1. 准备仓库
+构建任务依次执行：
 
-1. 在 GitHub 上创建新仓库
-2. 将代码推送到仓库
+1. 使用 `actions/checkout@v4` 检出代码。
+2. 使用 `pnpm/action-setup@v4` 读取 `package.json` 的 `packageManager`，安装固定版本的 pnpm（当前为 `11.20.0`）。
+3. 使用 `actions/setup-node@v4` 配置 Node.js 22 和 pnpm 缓存。
+4. 执行 `pnpm install`。
+5. 执行 `pnpm run build`，完成 TypeScript 检查和 Vite 构建。
+6. 使用 `actions/configure-pages@v4` 和 `actions/upload-pages-artifact@v3`，将 `dist/` 上传为 Pages artifact。
 
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/yourusername/your-repo.git
-git push -u origin main
-```
+部署任务依赖构建任务，使用 `actions/deploy-pages@v4` 发布到 `github-pages` environment。工作流声明了 `contents: read`、`pages: write`、`id-token: write` 权限，并通过 `pages` concurrency group 串行处理部署，不取消正在执行的任务。
 
-#### 2. 创建 GitHub Actions 工作流
+仓库 **Settings → Pages → Build and deployment → Source** 应配置为 **GitHub Actions**。此流程直接发布 artifact，不需要 `gh-pages` 分支或本地 `deploy` 脚本。
 
-在项目根目录创建 `.github/workflows/deploy.yml`：
+## 本地构建与发布
 
-```yaml
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 8
-        
-    - name: Install dependencies
-      run: pnpm install
-      
-    - name: Build
-      run: pnpm run build
-      
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v4
-      if: github.ref == 'refs/heads/main'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
-```
-
-#### 3. 配置 GitHub Pages
-
-1. 进入仓库设置 (Settings)
-2. 滚动到 "Pages" 部分
-3. 在 "Source" 下选择 "Deploy from a branch"
-4. 选择 `gh-pages` 分支和 `/ (root)` 文件夹
-5. 点击 "Save"
-
-#### 4. 更新 Vite 配置
-
-修改 `vite.config.ts`，设置正确的 base 路径：
-
-```typescript
-export default defineConfig({
-  // ... 其他配置
-  base: '/your-repo-name/', // 替换为你的仓库名
-})
-```
-
-### 方式二：手动部署
-
-#### 1. 构建项目
+使用 Node.js 22.13+，并与 `package.json` 中固定的 pnpm 版本保持一致。当前 CI 使用 Node.js 22；升级 pnpm 时需要一起核对 Node.js 要求。
 
 ```bash
+pnpm install
+pnpm run lint
 pnpm run build
+pnpm run preview
 ```
 
-#### 2. 部署到 gh-pages 分支
+`pnpm-workspace.yaml` 已通过 `allowBuilds.esbuild: true` 允许 esbuild 的安装脚本。安装和构建分开执行；不要把自动安装依赖重新写入构建脚本。
 
-安装 gh-pages 工具：
+检查预览后，将准备发布的更改提交并推送到 `master`。也可以在 GitHub 的 **Actions → Deploy to GitHub Pages → Run workflow** 中选择 `master`，重新部署该分支。构建产物 `dist/` 已被 Git 忽略，不需要提交。
 
-```bash
-pnpm add -D gh-pages
-```
+### 两个构建命令的区别
 
-在 `package.json` 添加部署脚本：
+| 命令 | 行为 |
+| --- | --- |
+| `pnpm run build` | `tsc -b && vite build`；当前 CI 使用此命令，源码定位插件保持启用 |
+| `pnpm run build:prod` | `tsc -b && BUILD_MODE=prod vite build`；禁用 `vite-plugin-source-info`，不生成该插件的 `data-matrix-*` 属性 |
 
-```json
-{
-  "scripts": {
-    "deploy": "gh-pages -d dist"
-  }
-}
-```
+两者都生成 Vite 生产构建。`BUILD_MODE` 是本项目单独读取的环境变量；普通 `vite build` 不会自动将它设为 `prod`。若希望线上禁用源码定位插件，需要修改工作流中的构建命令。
 
-执行部署：
+当前 CI 包含 TypeScript 检查，但没有 ESLint 或浏览器测试步骤；`pnpm run lint` 需在本地单独执行。
 
-```bash
-pnpm run deploy
-```
+## 站点路径与路由
 
-## 🔧 配置选项
+这是部署在域名根目录的用户站点，相关设置须保持一致：
 
-### 自定义域名
+- `vite.config.ts`：`base: '/'`。
+- `public/404.html`：`pathSegmentsToKeep = 0`。
+- 根目录 `index.html`：包含解码 `/?/path` 并恢复浏览器路径的内联脚本。
 
-1. 在 `public` 文件夹创建 `CNAME` 文件
-2. 在文件中写入你的域名：
+直接打开 `/blog` 时，GitHub Pages 的 404 页面会先跳转到 `/?/blog`，入口脚本恢复路径后由 React Router 显示博客列表。其他未匹配的应用路由跳转到 `/`。
 
-```
-yourdomain.com
-```
+文章 `/blog/<slug>.html` 是真实静态文件，由 Pages 直接提供。新增文章需要更新 `src/lib/blogLoader.ts` 的元数据，以及 `public/sitemap.xml`。简介和博客列表依赖 React 客户端渲染；文章正文是独立 HTML。
 
-3. 在 GitHub Pages 设置中配置自定义域名
+`public/` 中的头像、文章、404 页面、robots 和 sitemap 在构建时复制到 `dist/`。JS/CSS 资源位于 `dist/assets/`；Vite 配置显式拆分了 React 的 `vendor` 和 React Router 的 `router` chunk。
 
-### 路由配置
+主页的 canonical、Open Graph、Twitter card 和 Person 结构化数据位于根目录 `index.html`。独立文章不会继承这些元数据。若迁移域名或站点路径，需要一并检查这些 URL、robots、sitemap 和内容中的绝对路径。
 
-由于 GitHub Pages 是静态托管，需要处理 SPA 路由：
+## 发布验证
 
-在 `public` 文件夹创建 `404.html`：
+1. 在 GitHub Actions 中确认本次提交的 **build** 和 **deploy** 两个任务都成功；本地构建成功不代表线上已更新。
+2. 打开线上 `/`、直接访问并刷新 `/blog`，再打开 `/blog/rlvr-ttlm.html`，检查头像、字体、文章公式和返回链接。
+3. 检查移动端布局以及本次修改涉及的内容或动效。页脚的 `Last updated` 是构建时注入的日期，不是 Git 提交日期或部署成功凭证。
 
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Tech Homepage</title>
-    <script type="text/javascript">
-      // GitHub Pages SPA 重定向
-      var pathSegmentsToKeep = 1;
-      var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + 
-        '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-      );
-    </script>
-  </head>
-  <body>
-  </body>
-</html>
-```
+## 常见问题
 
-在 `public/index.html` 的 `<head>` 中添加：
-
-```html
-<script type="text/javascript">
-  (function(l) {
-    if (l.search[1] === '/' ) {
-      var decoded = l.search.slice(1).split('&').map(function(s) { 
-        return s.replace(/~and~/g, '&')
-      }).join('?');
-      window.history.replaceState(null, null,
-          l.pathname.slice(0, -1) + decoded + l.hash
-      );
-    }
-  }(window.location))
-</script>
-```
-
-## 📊 性能优化
-
-### 资源压缩
-
-Vite 已自动启用：
-- JavaScript/CSS 压缩
-- 资源哈希命名
-- Tree shaking
-
-### 代码分割
-
-当前配置已实现最佳的代码分割：
-
-```typescript
-build: {
-  rollupOptions: {
-    output: {
-      manualChunks: {
-        vendor: ['react', 'react-dom'],
-        router: ['react-router-dom'],
-        framer: ['framer-motion'],
-        markdown: ['react-markdown', 'remark-math', 'rehype-katex'],
-        syntax: ['react-syntax-highlighter']
-      }
-    }
-  }
-}
-```
-
-### 缓存策略
-
-- 静态资源使用长期缓存
-- HTML 文件使用短期缓存
-- 服务端启用 gzip 压缩
-
-## 🔍 故障排除
-
-### 常见问题
-
-#### 1. 页面显示 404
-
-**原因**：路由配置问题或 base 路径错误
-
-**解决方案**：
-- 检查 `vite.config.ts` 中的 `base` 设置
-- 确保 `404.html` 正确配置
-- 验证 GitHub Pages 设置
-
-#### 2. 静态资源加载失败
-
-**原因**：资源路径错误
-
-**解决方案**：
-- 使用相对路径 `base: './'
-- 或设置完整路径 `base: '/repo-name/'`
-
-#### 3. CSS 样式丢失
-
-**原因**：CSS 文件路径错误或未正确导入
-
-**解决方案**：
-- 检查 CSS 导入路径
-- 确保 Tailwind CSS 配置正确
-- 验证 PostCSS 配置
-
-#### 4. GitHub Actions 构建失败
-
-**原因**：依赖安装失败或构建错误
-
-**解决方案**：
-- 检查 Node.js 版本兼容性
-- 验证 package.json 依赖
-- 查看 Actions 日志详细错误
-
-### 调试步骤
-
-1. **本地验证**
-   ```bash
-   pnpm run build
-   pnpm run preview
-   ```
-
-2. **检查构建输出**
-   ```bash
-   ls -la dist/
-   ```
-
-3. **验证资源路径**
-   检查 `dist/index.html` 中的资源引用路径
-
-4. **测试路由**
-   确保所有页面路由正常工作
-
-## 📱 多平台支持
-
-### 移动端优化
-
-- 响应式设计已实现
-- 触摸友好的交互
-- 优化的加载性能
-
-### PWA 支持 (可选)
-
-如需添加 PWA 功能：
-
-1. 安装 Vite PWA 插件
-2. 配置 Service Worker
-3. 添加 Web App Manifest
-
-## 🚀 持续集成
-
-### 自动化流程
-
-当前 GitHub Actions 工作流包括：
-
-1. **代码检查**：ESLint + TypeScript
-2. **构建测试**：确保项目可正常构建
-3. **自动部署**：推送到 gh-pages 分支
-4. **缓存优化**：依赖和构建缓存
-
-### 扩展功能
-
-可添加的 CI/CD 功能：
-
-- 单元测试
-- E2E 测试
-- 性能检测
-- 安全扫描
-- 代码覆盖率
-
----
-
-部署完成后，您的网站将在 `https://yourusername.github.io/your-repo-name/` 可访问。
+| 现象 | 检查位置 |
+| --- | --- |
+| pnpm 无法启动或依赖安装失败 | 检查 Node.js 与固定的 pnpm 版本、`pnpm-lock.yaml`、`pnpm-workspace.yaml` 和 Actions 安装日志 |
+| 构建成功但发布失败 | 检查 Pages Source 是否为 GitHub Actions、工作流权限、`github-pages` environment 和 deploy 日志 |
+| 直接访问 `/blog` 失败 | 确认产物包含 `404.html`，`pathSegmentsToKeep` 为 `0`，根目录 `index.html` 保留解码脚本 |
+| 头像或脚本、样式返回 404 | 检查产物路径和 `base: '/'`，不要套用项目子目录站点的 base 配置 |
+| 新文章未出现在列表中 | HTML 文件与 `blogPostsData` 是分别维护的，检查 slug 与文件名是否一致 |
+| 博客公式未渲染 | 检查文章自身的 KaTeX CDN 请求和脚本；该页面不使用 React 应用的依赖包 |
+| 动画未运行时文字模糊或不可见 | 检查组件的初始样式、后台标签页行为和 reduced-motion 分支，参考 `CLAUDE.md` |

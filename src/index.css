@@ -253,32 +253,29 @@
 
 
 @layer components {
-  /* The summary is the one line that tells a scanning reader what the paper
-     is, so it carries the accent — the only body text on the page that does.
-     A dark band was considered and rejected: one is a pull quote, six is a
-     striped page.
+  .pub-distinction {
+    @apply inline-block rounded-[3px] bg-accent px-2 py-0.5 font-semibold text-paper-raised;
+  }
 
-     The wash is applied to the whole row, arXiv link included, so it reads as
-     a single strip rather than a chip floating next to a link. Contrast is
-     8.4:1 for the summary and 5.9:1 for the link against it.
-
-     opsz is set for text, not display: the global .font-display uses opsz 120,
-     which is drawn for the 96px headline and renders far too fine here. */
+  /* Distinctions carry the strong accent; summaries use a neutral tint so
+     the two kinds of information remain visually distinct. The band includes
+     the arXiv link, keeping the whole summary on one surface. */
   .pub-summary-row {
     /* Bleeds left only. A symmetric -mx-4 pushed the row 16px past
        SpotlightCard, which is overflow:hidden to contain its spotlight
        gradient — so the band's right end was clipped, and the arXiv arrow,
        sitting exactly on that boundary, disappeared as it travelled on hover. */
-    @apply -ml-4 rounded-[3px] bg-accent-wash/60 px-4 py-2.5;
+    @apply -ml-4 rounded-[3px] bg-ink/[0.035] px-4 py-2.5;
     transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .group:hover .pub-summary-row {
-    @apply bg-accent-wash;
+    @apply bg-ink/[0.055];
   }
 
   .pub-summary {
-    @apply font-display text-[1.125rem] leading-[1.5] text-accent;
+    @apply font-display text-[1.125rem] leading-[1.5] text-ink-muted;
+    /* Use text-size optical settings rather than the headline's opsz 120. */
     font-variation-settings: 'SOFT' 30, 'WONK' 0, 'opsz' 22;
   }
 }

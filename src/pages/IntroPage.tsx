@@ -265,7 +265,22 @@ function Publications() {
 
                   <Authors authors={pub.authors} />
 
-                  <p className="mt-1 text-[0.9375rem] text-ink-muted">{pub.venue}</p>
+                  <div className="mt-2 space-y-2 text-[0.9375rem] text-ink-muted">
+                    <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1.5">
+                      <span>{pub.venue}</span>
+                      {pub.presentation && pub.presentation !== 'Poster' && (
+                        <span className="pub-distinction">
+                          {pub.presentation}
+                        </span>
+                      )}
+                    </p>
+                    {pub.award && (
+                      <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1.5">
+                        <span>{pub.award.venue}</span>
+                        <span className="pub-distinction">{pub.award.label}</span>
+                      </p>
+                    )}
+                  </div>
 
                   {(pub.summary || pub.pdf) && (
                     <div className="pub-summary-row mt-3.5 flex items-baseline justify-between gap-8">

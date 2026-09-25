@@ -5,6 +5,12 @@ export interface Publication {
   title: string;
   authors: string[];
   venue: string;
+  presentation?: 'Oral' | 'Spotlight' | 'Poster';
+  /** A separate award venue, such as a workshop alongside the main conference. */
+  award?: {
+    venue: string;
+    label: string;
+  };
   year: number;
   type: 'conference' | 'journal' | 'preprint';
   doi?: string;
