@@ -157,6 +157,8 @@ workshop awards separate from the main conference venue.
 host, display date, and year; `series`, `url`, and `linkLabel` are optional.
 The date is authored text and is not parsed. Keep `sections.talks` enabled to
 show the section.
+For hosted slides, put the original PDF in `public/talks/`, set `url` to
+`/talks/<filename>.pdf`, and use `linkLabel: "Slides"`.
 
 **Blog post:** write a complete HTML document to `public/blog/<slug>.html`,
 then add metadata to `blogPostsData` and the URL to `public/sitemap.xml`.

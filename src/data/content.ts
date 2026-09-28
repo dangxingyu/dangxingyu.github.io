@@ -92,6 +92,15 @@ export const publications: Publication[] = [
 
 export const talks: Talk[] = [
   {
+    id: "lit-power-law-2026",
+    title: "The Power of Power Law: Asymmetry Enables Compositional Reasoning",
+    host: "ICLR 2026 LIT Workshop",
+    date: "2026",
+    year: 2026,
+    url: "/talks/Power-Law_Talk_LIT2026.pdf",
+    linkLabel: "Slides"
+  },
+  {
     id: "pli-hyperball-2026",
     title: "Hyperball Optimizer",
     host: "Princeton Language and Intelligence",
