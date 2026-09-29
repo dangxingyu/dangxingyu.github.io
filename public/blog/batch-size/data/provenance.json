@@ -1,0 +1,23 @@
+{
+  "source_commit": "462dc51a3bc7393143d555ad5e564e17ea71dcce",
+  "files": [
+    {
+      "path": "data/track3_batch_size_results.csv",
+      "sha256": "45494748abfdc8edef469f15a0ef9a0a66abe7407168f03674047d428a8e7ad6"
+    },
+    {
+      "path": "figure6_data/branch_endpoints.csv",
+      "sha256": "214808766c7fcc5c543be1f1244c2c542c70caf45ce2bff853c7988580f8e74a"
+    },
+    {
+      "path": "figure6_data/penalty_removed.csv",
+      "sha256": "51f9f94645f7500043640e49df55471105fc01b6f6d1cbf92a83bfaff31c84cd"
+    }
+  ],
+  "notes": [
+    "Optimizer losses are reported medians where multiple runs exist; HyperBall largely has one run per point.",
+    "Min/max are observed ranges, not confidence intervals.",
+    "Endpoint penalties are in 1e-3 nats, evaluated on 10.5M held-out tokens.",
+    "No missing measurements are interpolated."
+  ]
+}
