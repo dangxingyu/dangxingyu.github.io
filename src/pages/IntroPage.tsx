@@ -233,7 +233,7 @@ function Publications() {
         </h2>
       </Reveal>
 
-      <ol className="mt-8 grid grid-cols-1 gap-x-10 lg:grid-cols-2">
+      <ol className="mt-8">
         {publications.map((pub, i) => (
           <li key={pub.id}>
             <Reveal>

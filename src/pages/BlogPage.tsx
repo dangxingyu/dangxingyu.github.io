@@ -66,7 +66,7 @@ export function BlogPage() {
       <h1 className="font-display text-display-md font-medium text-ink">Blog</h1>
       <div className="mt-7 flex items-center gap-5">
         <span className="h-px w-14 shrink-0 bg-accent" aria-hidden="true" />
-        <p className="text-[1.0625rem] text-ink-muted">Notes on reasoning, training and theory.</p>
+        <p className="text-[1.0625rem] text-ink-muted">On minds, machines, and the world between</p>
       </div>
 
       {posts.length > 0 ? (

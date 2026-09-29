@@ -89,8 +89,8 @@ Keep component dimensions authored at their normal size; do not apply another
 - Both application fonts are self-hosted through `@fontsource-variable/*`.
   The Chinese name uses the explicit `font-cjk` system-font stack.
 
-Publication and talk rows use SpotlightCard. Publications use a two-column
-compact index on desktop and collapse to one column below the `lg` breakpoint.
+Publication and talk rows use SpotlightCard. Publications use a compact
+single-column list at every screen size.
 Each row keeps a narrow year column, condensed metadata, and a smaller neutral
 summary band. The summary band has a left-only bleed so the card's
 `overflow-hidden` does not clip the right edge or link arrow.
