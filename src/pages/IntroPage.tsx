@@ -309,7 +309,7 @@ function Publications() {
               rel="noopener noreferrer"
               className="link-rule text-[0.9375rem]"
             >
-              Full publication list on Google Scholar
+              Full publication list on Google Scholar <span aria-hidden="true">&rarr;</span>
             </a>
           </div>
         </Reveal>
