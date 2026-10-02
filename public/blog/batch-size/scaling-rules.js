@@ -9,12 +9,21 @@
   const setting = () => data.settings[state.task];
   const selected = () => setting().rules.find(rule => rule.id === state.selected);
   const batchLabel = batch => state.task === 'llm' ? ({262144:'256K',524288:'512K',1048576:'1M',2097152:'2M'})[batch] : batch>=1024 ? `${batch/1024}K` : fmt(batch);
-  const indices = () => setting().batches.map((_,i)=>i).filter(i=>state.view==='loss'||setting().retunedBaseline[i]);
-  const gap = (rule, index) => setting().retunedBaseline[index] ? rule.losses[index] - setting().retunedBaseline[index].loss : null;
-  const meanGap = rule => { const values=rule.losses.map((_,i)=>gap(rule,i)).filter(v=>v!==null);return values.reduce((a,b)=>a+b,0)/values.length; };
+  const indices = () => setting().batches.map((_,i)=>i);
+  const bestLoss = index => Math.min(setting().gridMinimum[index],setting().retunedBaseline[index]?.loss ?? Infinity);
+  const gap = (rule, index) => rule.losses[index] - bestLoss(index);
+  const meanGap = rule => rule.losses.reduce((sum,_,i)=>sum+gap(rule,i),0)/rule.losses.length;
   const plotValue = (rule,index) => state.view==='gap' ? gap(rule,index) : rule.losses[index];
   const decimal = v => v.toFixed(state.task === 'llm' ? 5 : 7);
   const recipeText = rule => setting().coords.map(c => `${c.label}: ${choiceNames[rule.choices[c.key]]}`).join('; ');
+  function retentionExponent() {
+    if (state.task !== 'llm') return '<mi>κ</mi>';
+    const s = setting(), numerator = s.referenceSteps, denominator = s.trainSteps[state.index];
+    let a = numerator, b = denominator;
+    while (b) [a,b] = [b,a%b];
+    const n = numerator/a, d = denominator/a;
+    return d === 1 ? `<mn>${fmt(n)}</mn>` : `<mfrac><mn>${fmt(n)}</mn><mn>${fmt(d)}</mn></mfrac><mo>≈</mo><mn>${(numerator/denominator).toFixed(2)}</mn>`;
+  }
   const presetId = name => {
     const s = setting();
     if (name === 'common') return s.commonRuleId;
@@ -28,21 +37,25 @@
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
     const f = frame(w,h,{l:72,r:22,t:20,b:43}), shown=indices();
     const values=s.rules.flatMap(r=>shown.map(i=>plotValue(r,i))), lo=Math.min(...values),hi=Math.max(...values);
-    const transform = state.view==='gap' ? v=>Math.sign(v)*Math.log1p(Math.abs(v)/.001) : v=>Math.log(v);
-    const top=state.view==='gap'?10**Math.ceil(Math.log10(Math.max(.01,hi))):hi*1.05;
-    const bottom=state.view==='gap'?(lo<0?-(10**Math.ceil(Math.log10(-lo))):0):lo*.95;
+    const lower = state.view==='gap' ? 0 : lo-(hi-lo)*.03;
+    const upper = hi+(hi-lower)*.04, roughStep=(upper-lower)/5;
+    const unit=10**Math.floor(Math.log10(roughStep)), fraction=roughStep/unit;
+    const tickStep=(fraction<=1?1:fraction<=2?2:fraction<=5?5:10)*unit;
+    const bottom=state.view==='gap'?0:Math.floor(lower/tickStep)*tickStep;
+    const top=Math.ceil(upper/tickStep)*tickStep;
     const x = b => f.l + Math.log2(b/s.batches[shown[0]]) / Math.log2(s.batches[shown.at(-1)]/s.batches[shown[0]]) * f.iw;
-    const y = value => f.t + f.ih * (1 - (transform(value)-transform(bottom))/(transform(top)-transform(bottom)));
+    const y = value => f.t + f.ih * (1 - (value-bottom)/(top-bottom));
     state.geometry = {f,x,y,shown,points:s.rules.map(r => shown.map(i => [x(s.batches[i]),y(plotValue(r,i))]))};
     const plotted=s.rules.length*shown.length;
-    node('rule-axis-title').textContent=state.view==='gap'?'Loss gap to full retuning':'Validation loss';
-    node('rule-axis-quantity').innerHTML=mathMarkup(state.view==='gap'?'<msub><mi>L</mi><mtext>rule</mtext></msub><mo>−</mo><msub><mi>L</mi><mtext>retuned</mtext></msub>':'<msub><mi>L</mi><mtext>rule</mtext></msub>')+'<span class="figure-axis-unit">nats</span>';
-    node('rule-coverage').textContent=shown.length===s.batches.length?'':`${fmt(plotted)} of ${fmt(s.measurementCount)} runs shown. No full retuning at 64 / 128; select Validation loss to see every run.`;
-    let markup = `<title>${s.rules.length} scaling-rule curves and ${plotted} measured runs. ${state.view==='gap'?'Signed loss gaps to full retuning.':'Validation losses.'} Click a curve to highlight it. Left and right arrow keys select rules in their overall grid rank order.</title>`;
-    const ticks=state.view==='gap'?[-100,-10,-1,-.1,-.01,-.001,0,.001,.01,.1,1,10,100]:[.01,.02,.05,.1,.2,.25,.3,.5,1,2,3,4,5,10,20,50,100];
-    for (const value of ticks.filter(v => v >= bottom && v <= top)) {
+    node('rule-axis-title').textContent=state.view==='gap'?'Loss gap to best tuned rule':'Validation loss';
+    node('rule-axis-quantity').innerHTML=mathMarkup(state.view==='gap'?'<msub><mi>L</mi><mtext>rule</mtext></msub><mo>−</mo><msub><mi>L</mi><mtext>best</mtext></msub>':'<msub><mi>L</mi><mtext>rule</mtext></msub>')+'<span class="figure-axis-unit">nats</span>';
+    node('rule-coverage').textContent='';
+    let markup = `<title>${s.rules.length} scaling-rule curves and ${plotted} measured runs. ${state.view==='gap'?'Nonnegative gaps to the best recorded grid or retuning loss.':'Validation losses.'} Linear loss axis. Click a curve to highlight it. Left and right arrow keys select rules in their overall grid rank order.</title>`;
+    const precision=Math.max(0,-Math.floor(Math.log10(tickStep)));
+    for (let i=0;i<=Math.round((top-bottom)/tickStep);i++) {
+      const value=bottom+i*tickStep;
       markup += `<line x1="${f.l}" x2="${w-f.r}" y1="${y(value)}" y2="${y(value)}" stroke="${token('--line')}" ${value?'stroke-dasharray="2 5"':''}/>`;
-      markup += svgText(f.l-12,y(value)+5,String(value).replace('-','−'),'font-size="16" text-anchor="end"');
+      markup += svgText(f.l-12,y(value)+5,value.toFixed(precision),'font-size="16" text-anchor="end"');
     }
     shown.forEach(i => { const b=s.batches[i];
       markup += `<line x1="${x(b)}" x2="${x(b)}" y1="${f.t}" y2="${h-f.b}" stroke="${token('--line')}" stroke-dasharray="2 6"/>`;
@@ -54,12 +67,12 @@
       markup += `<g data-rule="${r.id}"><title>Rule ${r.rank} / ${s.rules.length}: ${recipeText(r)}</title><path class="rule-ghost" d="${line(points,p=>p[0],p=>p[1])}"/>`;
       markup += points.map(([cx,cy],j) => `<circle class="rule-run" cx="${cx}" cy="${cy}" r="2"><title>${batchLabel(s.batches[shown[j]])}: ${decimal(r.losses[shown[j]])} nats</title></circle>`).join('')+'</g>';
     });
-    const baseline=shown.filter(i=>s.retunedBaseline[i]).map(i=>[x(s.batches[i]),y(state.view==='gap'?0:s.retunedBaseline[i].loss)]);
+    const baseline=shown.map(i=>[x(s.batches[i]),y(state.view==='gap'?0:bestLoss(i))]);
     markup += `</g><path class="rule-baseline" d="${line(baseline,p=>p[0],p=>p[1])}" fill="none" stroke="${token('--ink')}" stroke-width="1.4" stroke-dasharray="6 4"/><g id="rule-selection"></g><line id="rule-cursor" stroke="${token('--orange')}" stroke-dasharray="3 5" opacity=".5"/><circle id="rule-current-point" r="7" fill="${token('--orange')}" stroke="${token('--surface')}" stroke-width="2"/>`;
     svg.innerHTML = markup+researchAxes(f);
     svg.setAttribute('tabindex','0');
     svg.setAttribute('aria-label',`${s.rules.length} complete rules, ${plotted} measured runs. Click a curve; use left and right arrow keys to select rules.`);
-    svg.dataset.rules = s.rules.length; svg.dataset.runs = plotted;svg.dataset.view=state.view;
+    svg.dataset.rules = s.rules.length; svg.dataset.runs = plotted;svg.dataset.view=state.view;svg.dataset.yScale='linear';
     updateSelection();
   }
   function cursor(position) {
@@ -76,8 +89,8 @@
     node('rule-atlas').dataset.selectedRule = r.id;
     node('rule-builder').querySelectorAll('select').forEach(select => { select.value = r.choices[select.dataset.coordinate]; });
     node('rule-loss').textContent = decimal(r.losses[state.index]);
-    node('rule-baseline-loss').textContent = s.retunedBaseline[state.index]?decimal(s.retunedBaseline[state.index].loss):'Not measured';
-    node('rule-regret').textContent = gap(r,state.index)===null?'Not available':decimal(gap(r,state.index));
+    node('rule-baseline-loss').textContent = decimal(bestLoss(state.index));
+    node('rule-regret').textContent = decimal(gap(r,state.index));
     node('rule-mean').textContent = decimal(meanGap(r));
     const rank = String(r.rank).replace('.5','½');
     node('rule-verdict').textContent = `Overall grid rank ${rank} of ${s.rules.length}. `+(r.id===s.bestAtBatch[state.index]?'This rule attains the lowest grid loss at the selected batch.':r.id===s.commonRuleId?'The best common rule does not win this batch.':`The best grid rule at this batch has loss ${decimal(s.gridMinimum[state.index])} nats.`);
@@ -86,7 +99,7 @@
       const factor = continuous ? (choice==='fixed'?'<mn>1</mn>':choice==='sqrt'?'<msqrt><mi>κ</mi></msqrt>':'<mi>κ</mi>') : '';
       const expression = continuous ? `<msup>${v}<mo>′</mo></msup><mo>=</mo>${v}<mo>×</mo>${factor}` : `<msup>${v}<mo>′</mo></msup><mo>=</mo>${choice==='fixed'?v:`<msup>${v}<mi>ρ</mi></msup>`}`;
       return `<span>${mathMarkup(expression)}</span>`;
-    }).join('')+(r.choices.mu==='retention'||r.choices.beta1==='retention'||r.choices.beta2==='retention'?`<small>${mathMarkup('<mi>ρ</mi><mo>=</mo>'+ (state.task==='llm'?'<mfrac><mn>13,000</mn><mrow><mo>⌈</mo><mn>1,703,936,000</mn><mo>/</mo><msup><mi>B</mi><mo>′</mo></msup><mo>⌉</mo></mrow></mfrac>':'<mi>κ</mi>'))}</small>`:'');
+    }).join('')+(r.choices.mu==='retention'||r.choices.beta1==='retention'||r.choices.beta2==='retention'?`<small>${mathMarkup('<mi>ρ</mi><mo>=</mo>'+retentionExponent())}</small>`:'');
     document.querySelectorAll('[data-rule-preset]').forEach(button => {const active=button.dataset.rulePreset===state.preset;button.classList.toggle('active',active);button.setAttribute('aria-pressed',active);});
     cursor(indices().indexOf(state.index));
   }

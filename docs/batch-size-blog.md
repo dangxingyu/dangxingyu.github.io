@@ -14,7 +14,7 @@ The opening questions are copied verbatim from the paper’s active introduction
 revision 462dc51 is retained; an Overleaf refresh returned HTTP 503 during this
 edit, so a newer revision could not be confirmed.
 
-All displayed variables use native MathML: italic scalar variables, true numeric
+KaTeX typesets all displayed variables from MathML source: italic scalar variables, numeric
 subscripts, bold parameter vectors, and upright optimizer-group subscripts.
 `B` is a batch before scaling, `B′` after scaling, and `κ = B′/B`; toy sample
 budget `T = 4096` gives `K = T/B` updates. `hᵢ` is curvature and `cᵢ` is
@@ -35,7 +35,7 @@ polyline; arrow keys traverse rules ranked by mean gap. The builder resolves all
 coordinate combinations to actual rules. A smooth cursor plays tested batch
 changes; motion between endpoints is visual interpolation, not training history.
 Hidden/offscreen pages suspend playback; reduced motion advances discretely.
-The default y axis is the signed gap to the paper full-retuning baseline, transformed by `sign(gap) log(1 + |gap|/0.001)`. Negative gaps remain visible. LM 256K uses the paper’s best-grid proxy; its 512K–2M points are retuned medians. CIFAR has three-seed retuned medians only at 512–4096, so the gap view shows these four batches. The Validation loss view retains every original point, including 64/128, with no fabricated baseline. The inspector’s mean gap uses only available retuning baselines. Overall ranks and common-rule selection still use the original all-target grid regret. Axis names and quantities use 17–26px type, SVG ticks render at 16px, and legend swatches match each plotted line. Common selection
+The default y axis is the nonnegative loss gap to the lowest recorded loss at each batch across the original grid and available full-retuning medians. Both views use linear y axes, and both retain all 4/6 batches and all original endpoints. No negative differences are clipped and no missing retuning data are fabricated. Original retuning medians/proxy points remain separate in `retunedBaseline`. Displayed mean gaps equally weight every target batch; grid ranks and common-rule selection retain the original all-target grid-regret definition. The distinction appears beside the plot as well as in the protocol. Axis names and quantities use 17–26px type, SVG ticks render at 16px, and legend swatches match each plotted line. Common selection
 minimizes equally weighted regret across all target batches, including CIFAR's
 64/128-image targets. This differs from the winner at any one batch. The bound
 and SDE presets use the best completion of their matrix prescription within each
@@ -55,6 +55,7 @@ protocol, endpoint fields and hashes are included in the downloadable dataset.
 ## Interactions and computation
 
 - The leaderboard and pair comparison use reported losses at four measured batches.
+  Replicate counts are retained in downloadable data and omitted from the ranking labels and tooltips.
   Whiskers are observed min–max ranges. The pair chart's ±0.002-nat band is a tuning
   acceptance threshold, not a confidence interval.
 - `physics.js` supplies exact diagonal quadratic moments, stable-range numerical
@@ -148,3 +149,5 @@ readable labels, scientific correctness, or correct interactive behavior. After 
 authorized push, verify the GitHub Pages run and the deployed article and assets.
 
 The scaling-rule workspace places the curve atlas beside the complete rule builder and loss readouts on desktop. Selecting a curve synchronizes every coordinate; changing a coordinate immediately highlights its measured rule. On screens at or below 1000px, the compact chart stays visible while the builder and results scroll underneath. Narrow raw-loss plots retain all endpoints but label only a subset of batch ticks to prevent overlap. Repeated figure-category labels have been removed.
+
+MathML remains the formula source. `math-render.js` converts the small MathML vocabulary used by the essay to TeX, then uses locally hosted KaTeX 0.19.0 for both static prose and dynamic controls. KaTeX HTML supplies consistent radicals, fractions, and scripts; its parallel MathML output preserves accessibility. The pinned npm dev dependency supplies the vendored minified JS/CSS and WOFF2 fonts in `vendor/katex/`, with the upstream license. For LM retention coefficients, the inspector reduces `referenceSteps / trainSteps[selectedBatch]`: 2, 4, 8, or the exact 13,000/813 with approximate value 15.99.

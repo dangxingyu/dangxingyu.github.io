@@ -46,7 +46,13 @@ assert.deepEqual(data.settings.cifar.retunedBaseline.slice(0,2),[null,null]);
 assert(data.settings.cifar.rules[0].losses[3]-data.settings.cifar.retunedBaseline[3].loss<0,'Measured single-seed losses below the retuned median must remain negative gaps');
 assert(Math.abs(data.settings.llm.rules[0].losses.reduce((sum,v,i)=>sum+v-data.settings.llm.retunedBaseline[i].loss,0)/4-.00589125)<1e-12);
 console.log('PASS: all 4,752 scaling-rule endpoints, complete 216/648 Cartesian grids, regret selection and identical JS/JSON downloads.');
-console.log('PASS: paper retuning baselines, exact three-seed medians, explicit missing CIFAR 64/128 references, and signed comparison gaps.');
+const cifarBest=data.settings.cifar.batches.map((_,i)=>Math.min(data.settings.cifar.gridMinimum[i],data.settings.cifar.retunedBaseline[i]?.loss??Infinity));
+assert.deepEqual(cifarBest,[.224572,.2241355,.2273883,.2277826,.2294722,.2334599]);
+for(const s of Object.values(data.settings))for(const r of s.rules)r.losses.forEach((loss,i)=>{
+  const best=Math.min(s.gridMinimum[i],s.retunedBaseline[i]?.loss??Infinity);
+  assert(loss>=best,'The best recorded reference produces nonnegative gaps without clipping original measurements.');
+});
+console.log('PASS: original retuning medians, missing CIFAR references, and nonnegative gaps to the best recorded grid or retuning loss.');
 const cnr=JSON.parse(readFileSync(new URL('signsgd-cnr.json',root),'utf8'));
 const cnrContext={window:{}};vm.runInNewContext(readFileSync(new URL('signsgd-cnr.js',root),'utf8'),cnrContext);
 assert.deepEqual(JSON.parse(JSON.stringify(cnrContext.window.SIGNSGD_CNR_DATA)),cnr);

@@ -60,7 +60,7 @@
     },
     "selection": "mean regret over target batches",
     "scope": "All original single-seed complete scaling-rule grids, with the paper full-retuning reference points kept separately. Rule rankings and common-rule selection retain the original all-target grid-regret definition. No auxiliary weight-decay extensions or confidence intervals.",
-    "display_gap": "Original-grid validation loss minus the paper full-retuning baseline at the same batch, without clipping negative differences. The available-baseline mean weights available target batches equally. CIFAR 64/128 have no independent retuning baseline. The paper uses its best-grid proxy at LM 256K."
+    "display_gap": "Original-grid validation loss minus the lowest recorded loss at the same batch across the original grid and available paper full-retuning medians. Differences are naturally nonnegative without clipping. Both loss views use linear y axes; displayed means weight every target batch equally. CIFAR 64/128 use grid minima because no independent retuning baseline was measured."
   },
   "signsgd_cnr": {
     "curves": 3,
