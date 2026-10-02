@@ -5,7 +5,7 @@
   if (!data || !node('rule-lab')) return;
   const choiceNames = { fixed: 'Fixed', sqrt: 'Square-root', linear: 'Linear', retention: 'Preserve decay' };
   const variables = { etaM: mathVariable('η','M'), etaA: mathVariable('η','A'), lambdaM: mathVariable('λ','M'), lambdaA: mathVariable('λ','A'), mu: mathVariable('μ'), beta1: mathVariable('β',1), beta2: mathVariable('β',2) };
-  const state = { task: 'llm', view: 'gap', index: 0, selected: '', preset: 'common', running: false, visible: false, frame: 0, started: 0, from: 0, to: 0, geometry: null };
+  const state = { task: 'llm', view: 'gap', range: 'detail', index: 0, selected: '', preset: 'common', running: false, visible: false, frame: 0, started: 0, from: 0, to: 0, geometry: null };
   const setting = () => data.settings[state.task];
   const selected = () => setting().rules.find(rule => rule.id === state.selected);
   const batchLabel = batch => state.task === 'llm' ? ({262144:'256K',524288:'512K',1048576:'1M',2097152:'2M'})[batch] : batch>=1024 ? `${batch/1024}K` : fmt(batch);
@@ -31,47 +31,61 @@
     return s.rules.find(r => r.choices.etaM === (name === 'bound' ? 'sqrt' : 'linear') && r.choices.lambdaM === 'fixed' && r.choices.mu === (name === 'bound' ? 'fixed' : 'retention')).id;
   };
   function rebuildPlot() {
-    const s = setting(), svg = node('rule-atlas'), w = Math.max(240, Math.min(1100, svg.clientWidth)), h = innerWidth <= 1000 ? 230 : 360;
+    const s = setting(), svg = node('rule-atlas'), w = Math.max(180, Math.min(1100, svg.clientWidth)), h = innerWidth <= 1000 ? 200 : 280;
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
-    const f = frame(w,h,{l:72,r:22,t:20,b:43}), shown=indices();
-    const values=s.rules.flatMap(r=>shown.map(i=>plotValue(r,i))), lo=Math.min(...values),hi=Math.max(...values);
-    const lower = state.view==='gap' ? 0 : lo-(hi-lo)*.03;
-    const upper = hi+(hi-lower)*.04, roughStep=(upper-lower)/5;
-    const unit=10**Math.floor(Math.log10(roughStep)), fraction=roughStep/unit;
-    const tickStep=(fraction<=1?1:fraction<=2?2:fraction<=5?5:10)*unit;
-    const bottom=state.view==='gap'?0:Math.floor(lower/tickStep)*tickStep;
-    const top=Math.ceil(upper/tickStep)*tickStep;
+    const f = frame(w,h,{l:w<360?60:72,r:22,t:20,b:43}), shown=indices();
+    const values=s.rules.flatMap(r=>shown.map(i=>plotValue(r,i)));
+    const references=shown.map(i=>state.view==='gap'?0:bestLoss(i));
+    const domains=window.RuleAtlasAxis.domains(values,references,shown.map(i=>plotValue(selected(),i)),state.view==='gap');
+    const domain=domains[state.range], {bottom,top,step:tickStep,precision}=domain;
     const x = b => f.l + Math.log2(b/s.batches[shown[0]]) / Math.log2(s.batches[shown.at(-1)]/s.batches[shown[0]]) * f.iw;
     const y = value => f.t + f.ih * (1 - (value-bottom)/(top-bottom));
-    state.geometry = {f,x,y,shown,points:s.rules.map(r => shown.map(i => [x(s.batches[i]),y(plotValue(r,i))]))};
+    state.geometry = {f,x,y,shown,domain,full:domains.full,points:s.rules.map(r => shown.map(i => [x(s.batches[i]),y(plotValue(r,i))]))};
     const plotted=s.rules.length*shown.length;
     node('rule-axis-title').textContent=state.view==='gap'?'Loss gap to best tuned rule':'Validation loss';
     node('rule-axis-quantity').innerHTML=mathMarkup(state.view==='gap'?'<msub><mi>L</mi><mtext>rule</mtext></msub><mo>−</mo><msub><mi>L</mi><mtext>best</mtext></msub>':'<msub><mi>L</mi><mtext>rule</mtext></msub>')+'<span class="figure-axis-unit">nats</span>';
     node('rule-coverage').textContent='';
-    let markup = `<title>${s.rules.length} scaling-rule curves and ${plotted} measured runs. ${state.view==='gap'?'Nonnegative gaps to the best recorded grid or retuning loss.':'Validation losses.'} Linear loss axis. Click a curve to highlight it. Left and right arrow keys select rules in their overall grid rank order.</title>`;
-    const precision=Math.max(0,-Math.floor(Math.log10(tickStep)));
+    node('rule-range-tabs').querySelectorAll('button').forEach(b=>{const active=b.dataset.ruleRange===state.range;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active);});
+    let markup = `<title>${s.rules.length} scaling-rule curves and ${plotted} measured runs. ${state.view==='gap'?'Nonnegative gaps to the best recorded grid or retuning loss.':'Validation losses.'} Linear loss axis. ${state.range==='detail'?'Detail of the selected rule; all runs remain visible in the full-range overview.':'Full range of every measured rule.'} Click a curve to highlight it. Left and right arrow keys select rules in their overall grid rank order.</title><defs><clipPath id="rule-main-clip"><rect x="${f.l-5}" y="${f.t}" width="${f.iw+10}" height="${f.ih+6}"/></clipPath></defs>`;
     for (let i=0;i<=Math.round((top-bottom)/tickStep);i++) {
       const value=bottom+i*tickStep;
       markup += `<line x1="${f.l}" x2="${w-f.r}" y1="${y(value)}" y2="${y(value)}" stroke="${token('--line')}" ${value?'stroke-dasharray="2 5"':''}/>`;
-      markup += svgText(f.l-12,y(value)+5,value.toFixed(precision),'font-size="16" text-anchor="end"');
+      markup += svgText(f.l-12,y(value)+5,value.toFixed(precision),`font-size="17" text-anchor="end" fill="${token('--ink')}"`);
     }
     shown.forEach(i => { const b=s.batches[i];
       markup += `<line x1="${x(b)}" x2="${x(b)}" y1="${f.t}" y2="${h-f.b}" stroke="${token('--line')}" stroke-dasharray="2 6"/>`;
-      if (w >= 360 || shown.length <= 4 || [shown[0],shown[2],shown.at(-1)].includes(i)) markup += svgText(x(b),h-13,batchLabel(b),`font-size="16" text-anchor="${i===shown.at(-1)?'end':'middle'}"`);
+      if (w >= 360 || shown.length <= 4 || [shown[0],shown[2],shown.at(-1)].includes(i)) markup += svgText(x(b),h-13,batchLabel(b),`font-size="17" text-anchor="${i===shown.at(-1)?'end':'middle'}"`);
     });
-    markup += '<g class="rule-cloud" aria-hidden="true">';
+    markup += '<g clip-path="url(#rule-main-clip)"><g class="rule-cloud" aria-hidden="true">';
     s.rules.forEach((r,i) => {
       const points = state.geometry.points[i];
       markup += `<g data-rule="${r.id}"><title>Rule ${r.rank} / ${s.rules.length}: ${recipeText(r)}</title><path class="rule-ghost" d="${line(points,p=>p[0],p=>p[1])}"/>`;
       markup += points.map(([cx,cy],j) => `<circle class="rule-run" cx="${cx}" cy="${cy}" r="2"><title>${batchLabel(s.batches[shown[j]])}: ${decimal(r.losses[shown[j]])} nats</title></circle>`).join('')+'</g>';
     });
-    const baseline=shown.map(i=>[x(s.batches[i]),y(state.view==='gap'?0:bestLoss(i))]);
-    markup += `</g><path class="rule-baseline" d="${line(baseline,p=>p[0],p=>p[1])}" fill="none" stroke="${token('--ink')}" stroke-width="1.4" stroke-dasharray="6 4"/><g id="rule-selection"></g><line id="rule-cursor" stroke="${token('--orange')}" stroke-dasharray="3 5" opacity=".5"/><circle id="rule-current-point" r="7" fill="${token('--orange')}" stroke="${token('--surface')}" stroke-width="2"/>`;
+    const baseline=shown.map(i=>[x(s.batches[i]),y(references[i])]);
+    markup += `</g><path class="rule-baseline" d="${line(baseline,p=>p[0],p=>p[1])}" fill="none" stroke="${token('--ink')}" stroke-width="1.4" stroke-dasharray="6 4"/><g id="rule-selection"></g><line id="rule-cursor" stroke="${token('--orange')}" stroke-dasharray="3 5" opacity=".5"/><circle id="rule-current-point" r="7" fill="${token('--orange')}" stroke="${token('--surface')}" stroke-width="2"/></g>`;
     svg.innerHTML = markup+researchAxes(f);
     svg.setAttribute('tabindex','0');
-    svg.setAttribute('aria-label',`${s.rules.length} complete rules, ${plotted} measured runs. Click a curve; use left and right arrow keys to select rules.`);
-    svg.dataset.rules = s.rules.length; svg.dataset.runs = plotted;svg.dataset.view=state.view;svg.dataset.yScale='linear';
+    svg.setAttribute('aria-label',`${s.rules.length} complete rules, ${plotted} measured runs. ${state.range==='detail'?'Detail of the selected rule; full range in the overview.':'Full range.'} Click a curve; use left and right arrow keys to select rules.`);
+    svg.dataset.rules = s.rules.length; svg.dataset.runs = plotted;svg.dataset.view=state.view;svg.dataset.yScale='linear';svg.dataset.range=state.range;svg.dataset.yMin=bottom;svg.dataset.yMax=top;
+    rebuildOverview();
     updateSelection();
+  }
+  function rebuildOverview() {
+    const s=setting(), g=state.geometry, svg=node('rule-overview'), h=62;
+    const f=frame(g.f.w,h,{l:g.f.l,r:g.f.r,t:12,b:10}), {bottom,top,precision}=g.full;
+    const y=value=>f.t+f.ih*(1-(value-bottom)/(top-bottom));
+    g.overview={f,x:g.x,y,points:s.rules.map(r=>g.shown.map(i=>[g.x(s.batches[i]),y(plotValue(r,i))]))};
+    svg.setAttribute('viewBox',`0 0 ${f.w} ${h}`);
+    let markup=`<title>Full linear range of all ${s.rules.length} rules and ${s.measurementCount} measured runs. The shaded band is the main plot's vertical range. Click a curve to inspect its rule.</title><defs><clipPath id="rule-overview-clip"><rect x="${f.l-4}" y="${f.t-3}" width="${f.iw+8}" height="${f.ih+6}"/></clipPath></defs>`;
+    [bottom,top].forEach(v=>{markup+=svgText(f.l-12,y(v)+5,v.toFixed(precision),'font-size="14" text-anchor="end"');});
+    const bandTop=y(Math.min(top,g.domain.top)),bandBottom=y(Math.max(bottom,g.domain.bottom));
+    markup+=`<rect x="${f.l}" y="${bandTop}" width="${f.iw}" height="${bandBottom-bandTop}" fill="${token('--orange')}" fill-opacity=".08" stroke="${token('--orange')}" stroke-opacity=".35" stroke-width="1"/><g clip-path="url(#rule-overview-clip)"><g class="rule-overview-cloud">`;
+    s.rules.forEach((r,i)=>{markup+=`<path data-rule="${r.id}" d="${line(g.overview.points[i],p=>p[0],p=>p[1])}"><title>Rule ${r.rank}: ${recipeText(r)}</title></path>`;});
+    const baseline=g.shown.map(i=>[g.x(s.batches[i]),y(state.view==='gap'?0:bestLoss(i))]);
+    markup+=`</g><path d="${line(baseline,p=>p[0],p=>p[1])}" fill="none" stroke="${token('--ink')}" stroke-width="1" stroke-dasharray="4 3"/><path id="rule-overview-selection" fill="none" stroke="${token('--orange')}" stroke-width="2" stroke-linejoin="round"/><circle id="rule-overview-current" r="3" fill="${token('--orange')}" stroke="${token('--surface')}" stroke-width="1"/></g><line x1="${f.l}" x2="${f.l}" y1="${f.t}" y2="${h-f.b}" stroke="${token('--muted')}" stroke-width="1"/>`;
+    svg.innerHTML=markup;
+    svg.setAttribute('tabindex','0');svg.dataset.rules=s.rules.length;svg.dataset.runs=s.measurementCount;svg.dataset.yScale='linear';svg.dataset.yMin=bottom;svg.dataset.yMax=top;
   }
   function cursor(position) {
     const g = state.geometry, r = selected(), left = g.shown[Math.floor(position)], right = g.shown[Math.min(Math.floor(position)+1,g.shown.length-1)], fraction = position-Math.floor(position);
@@ -80,11 +94,13 @@
     const lineNode = node('rule-cursor');
     lineNode.setAttribute('x1',x); lineNode.setAttribute('x2',x); lineNode.setAttribute('y1',g.f.t);lineNode.setAttribute('y2',g.f.h-g.f.b);
     node('rule-current-point').setAttribute('cx',x);node('rule-current-point').setAttribute('cy',y);
+    node('rule-overview-current').setAttribute('cx',x);node('rule-overview-current').setAttribute('cy',g.overview.y(plotValue(r,left))*(1-fraction)+g.overview.y(plotValue(r,right))*fraction);
   }
   function updateSelection() {
     const s = setting(), r = selected(), points = state.geometry.points[s.rules.indexOf(r)];
     node('rule-selection').innerHTML = `<path d="${line(points,p=>p[0],p=>p[1])}" fill="none" stroke="${token('--orange')}" stroke-width="2.8" stroke-linejoin="round"/>`+points.map(([cx,cy],i)=>`<circle cx="${cx}" cy="${cy}" r="4.5" fill="${token('--orange')}" stroke="${token('--surface')}" stroke-width="1.5"><title>${batchLabel(s.batches[state.geometry.shown[i]])}: ${decimal(r.losses[state.geometry.shown[i]])} nats</title></circle>`).join('');
     node('rule-atlas').dataset.selectedRule = r.id;
+    node('rule-overview-selection').setAttribute('d',line(state.geometry.overview.points[s.rules.indexOf(r)],p=>p[0],p=>p[1]));node('rule-overview').dataset.selectedRule=r.id;
     node('rule-builder').querySelectorAll('select').forEach(select => { select.value = r.choices[select.dataset.coordinate]; });
     node('rule-loss').textContent = decimal(r.losses[state.index]);
     node('rule-baseline-loss').textContent = decimal(bestLoss(state.index));
@@ -101,14 +117,14 @@
     document.querySelectorAll('[data-rule-preset]').forEach(button => {const active=button.dataset.rulePreset===state.preset;button.classList.toggle('active',active);button.setAttribute('aria-pressed',active);});
     cursor(indices().indexOf(state.index));
   }
-  function choose(id,preset='') { pause();state.selected=id;state.preset=preset;updateSelection(); }
+  function choose(id,preset='') { pause();state.selected=id;state.preset=preset;if(state.range==='detail')rebuildPlot();else updateSelection(); }
   function updateBatch(index) {
     state.index=index;
     node('rule-batch').value=indices().indexOf(index);
     const s=setting(), value=`${batchLabel(s.batches[index])} ${s.unit} / update`;
     node('rule-target-batch').textContent=value;node('rule-batch').setAttribute('aria-valuetext',value);
     node('rule-batch-ticks').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.ruleBatch===index));
-    if (state.preset==='batch') state.selected=s.bestAtBatch[index];
+    if (state.preset==='batch' && state.selected!==s.bestAtBatch[index]) {state.selected=s.bestAtBatch[index];if(state.range==='detail'){rebuildPlot();return;}}
     updateSelection();
   }
   function pause() {
@@ -152,6 +168,7 @@
     if(!indices().includes(state.index))state.index=indices()[0];
     rebuildBatchControls();rebuildPlot();updateBatch(state.index);
   });
+  node('rule-range-tabs').addEventListener('click',e=>{const button=e.target.closest('[data-rule-range]');if(!button||button.dataset.ruleRange===state.range)return;pause();state.range=button.dataset.ruleRange;rebuildPlot();});
   node('rule-task-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-task]');if(b)setTask(b.dataset.task);});
   node('rule-builder').addEventListener('change',()=>{
     const choices=Object.fromEntries([...node('rule-builder').querySelectorAll('select')].map(select=>[select.dataset.coordinate,select.value]));
@@ -160,22 +177,25 @@
   node('rule-lab').querySelector('.rule-presets').addEventListener('click',e=>{const b=e.target.closest('[data-rule-preset]');if(b)choose(presetId(b.dataset.rulePreset),b.dataset.rulePreset);});
   node('rule-batch').addEventListener('input',()=>{pause();updateBatch(indices()[+node('rule-batch').value]);});
   node('rule-batch-ticks').addEventListener('click',e=>{const b=e.target.closest('[data-rule-batch]');if(b){pause();updateBatch(+b.dataset.ruleBatch);}});
-  node('rule-atlas').addEventListener('click',e=>{
-    const svg=node('rule-atlas'),rect=svg.getBoundingClientRect(),g=state.geometry;
+  function selectFromPlot(e, id, geometry) {
+    const svg=node(id),rect=svg.getBoundingClientRect(),g=geometry;
     const px=(e.clientX-rect.left)*g.f.w/rect.width,py=(e.clientY-rect.top)*g.f.h/rect.height;
     if(px<g.f.l-10||px>g.f.w-g.f.r+10||py<g.f.t-10||py>g.f.h-g.f.b+10)return;
-    // Select the closest polyline instead of whichever dense SVG path paints last.
     let nearest=0,distance=Infinity;
     g.points.forEach((points,i)=>{for(let j=0;j<points.length-1;j++){
       const [ax,ay]=points[j],[bx,by]=points[j+1],dx=bx-ax,dy=by-ay;
       const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy))),d=(px-ax-t*dx)**2+(py-ay-t*dy)**2;
       if(d<distance){distance=d;nearest=i;}
     }});choose(setting().rules[nearest].id);
-  });
-  node('rule-atlas').addEventListener('keydown',e=>{
+  }
+  function selectWithKeyboard(e) {
     if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();
     const s=setting(),i=s.rules.indexOf(selected()),next=e.key==='Home'?0:e.key==='End'?s.rules.length-1:Math.max(0,Math.min(s.rules.length-1,i+(e.key==='ArrowRight'?1:-1)));choose(s.rules[next].id);
-  });
+  }
+  node('rule-atlas').addEventListener('click',e=>selectFromPlot(e,'rule-atlas',state.geometry));
+  node('rule-overview').addEventListener('click',e=>selectFromPlot(e,'rule-overview',state.geometry.overview));
+  node('rule-atlas').addEventListener('keydown',selectWithKeyboard);
+  node('rule-overview').addEventListener('keydown',selectWithKeyboard);
   node('rule-play').addEventListener('click',()=>{
     if(state.running){pause();cursor(indices().indexOf(state.index));return;}
     if(state.index===indices().at(-1))updateBatch(indices()[0]);
