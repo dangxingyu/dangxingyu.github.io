@@ -17,12 +17,10 @@
   const decimal = v => v.toFixed(state.task === 'llm' ? 5 : 7);
   const recipeText = rule => setting().coords.map(c => `${c.label}: ${choiceNames[rule.choices[c.key]]}`).join('; ');
   function retentionExponent() {
-    if (state.task !== 'llm') return '<mi>κ</mi>';
+    if (state.task !== 'llm') return '<mo>=</mo><mi>κ</mi>';
     const s = setting(), numerator = s.referenceSteps, denominator = s.trainSteps[state.index];
-    let a = numerator, b = denominator;
-    while (b) [a,b] = [b,a%b];
-    const n = numerator/a, d = denominator/a;
-    return d === 1 ? `<mn>${fmt(n)}</mn>` : `<mfrac><mn>${fmt(n)}</mn><mn>${fmt(d)}</mn></mfrac><mo>≈</mo><mn>${(numerator/denominator).toFixed(2)}</mn>`;
+    const ratio = numerator/denominator;
+    return Number.isInteger(ratio) ? `<mo>=</mo><mn>${fmt(ratio)}</mn>` : `<mo>≈</mo><mn>${fmt(Math.round(ratio))}</mn>`;
   }
   const presetId = name => {
     const s = setting();
@@ -99,7 +97,7 @@
       const factor = continuous ? (choice==='fixed'?'<mn>1</mn>':choice==='sqrt'?'<msqrt><mi>κ</mi></msqrt>':'<mi>κ</mi>') : '';
       const expression = continuous ? `<msup>${v}<mo>′</mo></msup><mo>=</mo>${v}<mo>×</mo>${factor}` : `<msup>${v}<mo>′</mo></msup><mo>=</mo>${choice==='fixed'?v:`<msup>${v}<mi>ρ</mi></msup>`}`;
       return `<span>${mathMarkup(expression)}</span>`;
-    }).join('')+(r.choices.mu==='retention'||r.choices.beta1==='retention'||r.choices.beta2==='retention'?`<small>${mathMarkup('<mi>ρ</mi><mo>=</mo>'+retentionExponent())}</small>`:'');
+    }).join('')+(r.choices.mu==='retention'||r.choices.beta1==='retention'||r.choices.beta2==='retention'?`<small>${mathMarkup('<mi>ρ</mi>'+retentionExponent())}</small>`:'');
     document.querySelectorAll('[data-rule-preset]').forEach(button => {const active=button.dataset.rulePreset===state.preset;button.classList.toggle('active',active);button.setAttribute('aria-pressed',active);});
     cursor(indices().indexOf(state.index));
   }

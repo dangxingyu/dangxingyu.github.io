@@ -1,4 +1,13 @@
 /* Research interactions inherit the site's type and palette. Series colors encode methods. */
+.sandbox-grid{align-items:start}
+.sim-controls{min-width:0}
+.sim-loss-panel{border-top:1px solid var(--line);padding-top:17px;min-width:0}
+.sim-loss-panel .eyebrow{font-size:13px;letter-spacing:.01em;margin-bottom:10px}
+.sim-controls .sim-facts{border:0;padding-top:0;margin:12px 0 0;gap:12px;flex-wrap:wrap}
+.sim-controls .sim-facts>div{display:flex;align-items:baseline;gap:8px}
+.sim-controls .sim-facts span{font-size:10px;letter-spacing:0}
+.sim-controls .sim-facts strong{font-family:var(--sans);font-size:12px;font-weight:600;line-height:1.5}
+.simulation-results .tuning-note{align-self:start}
 .pair-lab,.phase-lab{margin-top:34px;padding-top:32px;border-top:1px solid var(--line)}
 .pair-lab{padding:30px 0 0}.pair-heading p,.phase-heading p,.scaling-challenge p{font-size:14px;line-height:1.75;color:var(--muted);margin-top:10px;max-width:680px}
 .pair-heading{max-width:650px}.pair-controls{display:flex;gap:18px;align-items:end;margin:23px 0 26px}.pair-controls>span{align-self:center;padding-top:20px;color:var(--muted);font-size:13px}.pair-controls label{font-size:12px;display:grid;gap:7px;min-width:150px}.pair-controls select{color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 34px 10px 13px;min-height:44px;cursor:pointer}.pair-verdict{font-size:15px;font-weight:500;margin:20px 0 8px;max-width:830px}.pair-lab>.small-text{max-width:830px}

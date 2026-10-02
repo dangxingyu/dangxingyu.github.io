@@ -341,7 +341,7 @@ function setSimulationView(mode){
   renderLandscape();
 }
 function renderLoss(){
-  const chart=$('sim-loss'),width=Math.max(360,Math.min(480,chart.clientWidth));
+  const chart=$('sim-loss'),width=Math.max(240,Math.min(480,chart.clientWidth));
   const key=`${width}:${document.documentElement.dataset.theme}`;
   const {ymax,ymin}=sim.lossBounds;
   if(simLoss.key!==key||simLoss.paths!==sim.paths){
@@ -349,7 +349,8 @@ function renderLoss(){
     chart.setAttribute('viewBox',`0 0 ${width} 170`);
     const samples=sim.paths.sgd.at(-1).samples;
     const f=frame(width,170,{l:43,r:12,t:12,b:28}),x=s=>f.l+s/samples*f.iw;
-    const a=axes(f,ymin,ymax,[[0,'0'],[samples/2,fmt(samples/2)],[samples,fmt(samples)+' samples']],x,{dark:true,format:v=>scientificSVG(10**v)});
+    const xticks=width<340?[[0,'0'],[samples,fmt(samples)+' samples']]:[[0,'0'],[samples/2,fmt(samples/2)],[samples,fmt(samples)+' samples']];
+    const a=axes(f,ymin,ymax,xticks,x,{dark:true,format:v=>scientificSVG(10**v)});
     chart.innerHTML=a.svg+`<line class="comparison-budget" x1="${x(NQM.T)}" x2="${x(NQM.T)}" y1="${f.t}" y2="${f.h-f.b}" stroke="${token('--muted')}" stroke-dasharray="3 4" opacity=".7"/>`+svgText(x(NQM.T)+5,f.t+11,'4K','font-size="10"')+['sgd','newton'].map(m=>`<path id="sim-loss-${m}" fill="none" stroke="${colors[m]}" stroke-width="1.6"/>`).join('');
     ['sgd','newton'].forEach(m=>{
       const pts=sim.paths[m],stride=Math.max(1,Math.ceil((pts.length-1)/350));
