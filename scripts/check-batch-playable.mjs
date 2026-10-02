@@ -129,3 +129,5 @@ try {
 } finally { await worker.terminate(); }
 
 await import('./check-batch-render.mjs');
+
+await import("./check-scaling-rule-data.mjs");

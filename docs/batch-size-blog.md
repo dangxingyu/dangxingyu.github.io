@@ -1,10 +1,56 @@
 # Batch-size research essay
 
-The standalone article is `public/blog/batch-size.html`. Its four chapter anchors and
-the paper's measured CSVs are stable. It uses the personal site's Fraunces and
+The standalone article is `public/blog/batch-size.html`. The existing anchors and measured CSVs remain stable.
+The article follows the manuscript: scaling-rule derivations and search, retuned
+optimizer crossovers, the quadratic mechanism, directional scaling, then the
+sharp-subspace intervention. The local SignSGD section is `#directional-scaling`. It uses the personal site's Fraunces and
 Instrument Sans identity, with rust and green identifying scientific comparisons.
 The measured experiments, noisy-quadratic illustration, and local SignSGD argument
 must remain explicitly distinguished.
+
+## Evidence and typography
+
+Six large editorial claims summarize the actual results and mechanism. Source
+revision 462dc51 is retained; an Overleaf refresh returned HTTP 503 during this
+edit, so a newer revision could not be confirmed.
+
+All displayed variables use native MathML: italic scalar variables, true numeric
+subscripts, bold parameter vectors, and upright optimizer-group subscripts.
+`B` is a batch before scaling, `B′` after scaling, and `κ = B′/B`; toy sample
+budget `T = 4096` gives `K = T/B` updates. `hᵢ` is curvature and `cᵢ` is
+single-example noise variance. Matrix/auxiliary learning rates and weight decays
+are `η_M/η_A` and `λ_M/λ_A`; momentum uses `μ, β₁, β₂`. The hero's two
+projected coordinate vectors live in a separate compass legend, outside the
+landscape. Series legends use a line and endpoint matching their plotted marks.
+
+`data/scaling-rules.js` and its JSON download contain every original rule endpoint:
+216 × 4 = 864 language-model runs (seed 1) and 648 × 6 = 3,888 CIFAR-5M runs
+(seed 42). The sources and hashes are in that dataset and `provenance.json`.
+CIFAR uses the final-ten-evaluation mean, not final loss or seed uncertainty.
+These grids exclude full-retuning medians and partial auxiliary-decay extensions.
+
+The rule fan chart retains every curve and every measured point, with faint
+background marks and an emphasized selected rule. Click chooses the nearest
+polyline; arrow keys traverse rules ranked by mean gap. The builder resolves all
+coordinate combinations to actual rules. A smooth cursor plays tested batch
+changes; motion between endpoints is visual interpolation, not training history.
+Hidden/offscreen pages suspend playback; reduced motion advances discretely.
+The y transform is `log(1 + gap/0.001)` with numeric gap ticks. Common selection
+minimizes equally weighted regret across all target batches, including CIFAR's
+64/128-image targets. This differs from the winner at any one batch. The bound
+and SDE presets use the best completion of their matrix prescription within each
+grid, rather than claiming to reproduce the paper's separate comparison cohorts.
+
+The one-dimensional SignSGD panel beside the local movement challenge reads the
+paper's 27 original `μ = 0.9` tuning results. CNR is a discrete control for the
+three tested conditions, 0.001/0.03/1; no unknown condition is interpolated. All
+nine batch endpoints per condition remain present. The selected curve displays
+`η(B′)/η(1)` and its log–log OLS exponent, 0.588/0.794/0.904. The paper's search
+uses random initialization and independent Monte Carlo selection/validation.
+This optimizes terminal loss across a complete finite-budget run; the neighboring
+stationary frozen-coordinate calculation describes local expected movement.
+Their curves and exponents must not be substituted for one another. The original
+protocol, endpoint fields and hashes are included in the downloadable dataset.
 
 ## Interactions and computation
 
@@ -29,7 +75,8 @@ must remain explicitly distinguished.
 - The hero caches projected trajectories and vector meshes at each drawing scale.
   Playback takes 1.6–4.2 seconds according to the number of updates; large batches
   smoothly interpolate between actual optimizer states. This is a visual tween,
-  not an additional optimizer update. Its camera follows the recent paths and
+  not an additional optimizer update. Its camera follows the recent paths, keeps
+  the full accumulated trace as cached vectors, and
   holds the completed view until explicit Replay.
   Hero and sandbox animation loops stop when
   their view is hidden or the document loses visibility. Manual pause freezes the
@@ -37,9 +84,11 @@ must remain explicitly distinguished.
 - The sandbox caches its contours and appends every newly revealed trajectory segment
   to offscreen canvases. The loss plot retains its axes and precomputes a bounded
   display curve, with the exact current update as its endpoint. Theme, size, replay,
-  and experiment changes invalidate the relevant drawing caches.
+  and experiment changes invalidate the relevant drawing caches. Full traces also
+  persist as cached vector paths; automatic zoom redraws them without bitmap scaling.
 - `simulation-camera.js` frames both trajectories using rolling coordinate bounds.
-  Auto zoom follows a bounded recent window, retaining original parameter coordinates
+  Auto zoom retains the full accumulated trace as cached vectors, redrawn at the
+  current scale, and emphasizes a bounded recent window. It retains original parameter coordinates
   and adaptive numeric ticks. Conservative future bounds and gradual log-scale easing
   keep zoom monotonic within a run. Contours use fixed model-space levels; hero mesh
   resolutions crossfade instead of switching abruptly. The focused main view draws

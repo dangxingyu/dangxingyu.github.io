@@ -54,7 +54,7 @@
       markup += `<line x1="${f.l}" x2="${f.w-f.r}" y1="${y(v)}" y2="${y(v)}" stroke="${gridStroke()}" ${v===0?'stroke-width="1.5"':'stroke-dasharray="2 5"'}/>`;
       markup += text(f.l-9, y(v)+4, (v*1000).toFixed(1), 'text-anchor="end"');
     });
-    markup += text(f.l, 12, `Loss of ${second} − loss of ${first} (10⁻³ nats)`);
+    markup += text(f.l, 12, `Loss of ${second} − loss of ${first} (10<tspan baseline-shift="super" font-size="9">−3</tspan> nats)`);
     markup += `<path d="${line(points, p=>x(p.batch), p=>y(p.value))}" fill="none" stroke="${token('--ink')}" stroke-width="2.3" stroke-linejoin="round"/>`;
     points.forEach(p => {
       const sign = p.value > 0 ? first : p.value < 0 ? second : 'Tie';
@@ -78,8 +78,8 @@
 
   function scaffoldPhaseMap() {
     if (el('phase-map').childElementCount) return;
-    let html = '<div class="phase-axis phase-axis-x"><span>Batch size</span><i aria-hidden="true"></i></div>'
-      + '<div class="phase-axis phase-axis-y"><span>Noise variance</span><i aria-hidden="true"></i></div>';
+    let html = `<div class="phase-axis phase-axis-x"><span>Batch size ${mathMarkup(mathVariable('B'))}</span><i aria-hidden="true"></i></div>`
+      + `<div class="phase-axis phase-axis-y"><span>Noise variance ${mathMarkup(mathVariable('c',1))}</span><i aria-hidden="true"></i></div>`;
     for (let exponent = 0; exponent < columns; exponent++) {
       const batch = 2 ** exponent;
       html += `<span class="phase-column" style="grid-column:${exponent + 3};grid-row:2">${batch >= 1024 ? batch / 1024 + 'K' : batch}</span>`;
@@ -203,14 +203,14 @@
     const result = winnerResult(sim.tuned.sgd.total, sim.tuned.newton.total);
     el('phase-winner').textContent = result.winner;
     el('phase-winner').style.color = result.tied ? token('--ink') : colors[result.winner === 'SGD' ? 'sgd' : 'newton'];
-    el('phase-detail').textContent = `Batch ${fmt(sim.batch)}, noise variance ${sim.noise}. ${fmt(NQM.T / sim.batch)} updates. ${result.tied ? 'Expected losses are within 2% or both below 10⁻¹⁴.' : `The other method’s expected loss is ${result.factor >= 1000 ? result.factor.toExponential(1) : result.factor.toFixed(2)}× larger.`}`;
+    el('phase-detail').innerHTML = `Batch ${fmt(sim.batch)}, noise variance ${sim.noise}. ${fmt(NQM.T / sim.batch)} updates. ${result.tied ? 'Expected losses are within 2% or both below 10<sup>−14</sup>.' : `The other method’s expected loss is ${result.factor >= 1000 ? scientificHTML(result.factor) : result.factor.toFixed(2)}× larger.`}`;
     ['sgd', 'newton'].forEach(method => { el(`phase-${method}-loss`).textContent = sim.tuned[method].total.toPrecision(3); });
     const starts = { both: [1, 1], flat: [1, 0], sharp: [0, 1] };
     document.querySelectorAll('.phase-starts button').forEach(button => {
       const selected = starts[button.dataset.start].every((v, i) => Math.abs(sim.start[i] - v) < 1e-10);
       button.setAttribute('aria-pressed', String(selected));
     });
-    el('phase-context').textContent = `Curvature ${sim.sharp}× · start (w₁, w₂) = (${sim.start.map(v => Number(v.toFixed(2))).join(', ')}). Noise acts in the flat direction.`;
+    el('phase-context').innerHTML = `${mathMarkup(mathVariable('h',2)+`<mo>=</mo><mn>${sim.sharp}</mn>`)} · start ${mathMarkup('<mo>(</mo>'+mathVariable('w',1)+'<mo>,</mo>'+mathVariable('w',2)+'<mo>)</mo><mo>=</mo><mo>(</mo>'+sim.start.map(v=>`<mn>${Number(v.toFixed(2))}</mn>`).join('<mo>,</mo>')+'<mo>)</mo>')}. Noise acts in the flat direction.`;
   }
   function drawPhaseMap() { updatePhaseSelection(); requestPhaseMap(); }
   function selectPhase(cell) {
@@ -268,9 +268,9 @@
       `<span class="rail-target high" style="left:${high*100}%"><b>High CNR ${high.toFixed(2)}</b></span><span class="rail-target low" style="left:${low*100}%"><b>Low CNR ${low.toFixed(2)}</b></span>`);
     const movements=[NQM.displacement(1,ratio,alpha),NQM.displacement(.001,ratio,alpha)];
     const error=Math.max(...movements.map(v=>Math.abs(Math.log(v))));
-    el('challenge-result').textContent=ratio===1?'With no batch change, both are preserved for every exponent. Increase the batch to create the challenge.'
+    el('challenge-result').innerHTML=ratio===1?'With no batch change, both are preserved for every exponent. Increase the batch to create the challenge.'
       : error<.05?'Both movements are within about 5% of the reference at this batch ratio.'
-      : `The larger multiplicative deviation is ${Math.exp(error).toFixed(2)}×. High CNR needs α ≈ ${high.toFixed(2)}; low CNR needs α ≈ ${low.toFixed(2)}.`;
+      : `The larger multiplicative deviation is ${Math.exp(error).toFixed(2)}×. High CNR needs ${mathMarkup(mathVariable("α")+`<mo>≈</mo><mn>${high.toFixed(2)}</mn>`)}; low CNR needs ${mathMarkup(mathVariable("α")+`<mo>≈</mo><mn>${low.toFixed(2)}</mn>`)}.`;
     el('scale-compromise').disabled = ratio===1;
   }
   el('scale-compromise').addEventListener('click', () => {

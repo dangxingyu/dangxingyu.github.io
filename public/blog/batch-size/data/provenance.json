@@ -12,6 +12,22 @@
     {
       "path": "figure6_data/penalty_removed.csv",
       "sha256": "51f9f94645f7500043640e49df55471105fc01b6f6d1cbf92a83bfaff31c84cd"
+    },
+    {
+      "path": "data/muonw_batch_transfer_raw_results.csv",
+      "sha256": "8ed4f4ac28ffab3c5caa5ddee260c512fd746ea4c093777b932aea6c4f0f3287"
+    },
+    {
+      "path": "data/cifar5m_untied_batch_transfer_results.csv",
+      "sha256": "6a21f0ec9b45667bdc4e270aeedc798bd27b5be48a0bd94f5a978ba7f02d2813"
+    },
+    {
+      "path": "figures/signsgd_cnr_scaling_b09/training.csv",
+      "sha256": "894ba5118e493e859b733deaaf5a03908440e064b54f95706569635e7a2bb19c"
+    },
+    {
+      "path": "figures/signsgd_cnr_scaling_b09/protocol.json",
+      "sha256": "b82af44418875589730bc9f0e4c2aabf02c4462d096802c468fe4732572365c7"
     }
   ],
   "notes": [
@@ -19,5 +35,35 @@
     "Min/max are observed ranges, not confidence intervals.",
     "Endpoint penalties are in 1e-3 nats, evaluated on 10.5M held-out tokens.",
     "No missing measurements are interpolated."
-  ]
+  ],
+  "scaling_rules": {
+    "measurements": 4752,
+    "llm": {
+      "rules": 216,
+      "runs": 864,
+      "seed": 1,
+      "metric": "terminal token-averaged validation loss"
+    },
+    "cifar": {
+      "rules": 648,
+      "runs": 3888,
+      "seed": 42,
+      "metric": "per-example validation loss averaged over final ten evaluations"
+    },
+    "selection": "mean regret over target batches",
+    "scope": "Original single-seed complete scaling-rule grids only; no full-retuning medians, auxiliary weight-decay extensions, or confidence intervals."
+  },
+  "signsgd_cnr": {
+    "curves": 3,
+    "endpoints": 27,
+    "cnrs": [
+      0.001,
+      0.03,
+      1.0
+    ],
+    "momentum": 0.9,
+    "sample_budget": 4096,
+    "metric": "Monte Carlo expected terminal loss; independently tuned learning rate per batch",
+    "source": "figures/signsgd_cnr_scaling_b09/training.csv"
+  }
 }

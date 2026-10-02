@@ -1,12 +1,16 @@
 'use strict';
 const $ = id => document.getElementById(id);
 const DATA = window.PAPER_DATA;
+const mathMarkup = body => `<math>${body}</math>`;
+const mathVariable = (symbol, subscript) => subscript === undefined ? `<mi>${symbol}</mi>` : `<msub><mi>${symbol}</mi>${Number.isFinite(+subscript)?`<mn>${subscript}</mn>`:`<mtext>${subscript}</mtext>`}</msub>`;
 const colors = { SOAP: '#987247', Shampoo: '#087c75', Muon: '#ca4c28', Adam: '#6476a7', Lion: '#8a8192', sgd: '#f19a78', newton: '#77d9bc' };
 const fmt = n => n.toLocaleString('en-US');
 const batchName = b => ({131072:'128K',524288:'512K',1048576:'1M',2097152:'2M'})[b] || fmt(b);
 const line = (points, x, y) => points.map((p,i) => `${i?'L':'M'}${x(p).toFixed(2)},${y(p).toFixed(2)}`).join(' ');
 const svgText = (x,y,text,extra='') => `<text x="${x}" y="${y}" ${extra}>${text}</text>`;
 const tickStyle = 'font-size="12"';
+const scientificSVG = (value, digits=0) => { const [coefficient,exponent]=value.toExponential(digits).split('e');return `${Number(coefficient)===1?'':Number(coefficient)+' × '}10<tspan baseline-shift="super" font-size="9">${Number(exponent).toString().replace('-', '−')}</tspan>`; };
+const scientificHTML = (value,digits=1) => {const [coefficient,exponent]=value.toExponential(digits).split('e');return `${Number(coefficient)===1?'':Number(coefficient)+' × '}10<sup>${Number(exponent).toString().replace('-', '−')}</sup>`;};
 const token = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 function frame(w,h,margins={l:48,r:20,t:25,b:38}) { return {w,h,...margins,iw:w-margins.l-margins.r,ih:h-margins.t-margins.b}; }
 function chartFrame(id,width,height,margins){
@@ -33,7 +37,7 @@ function drawRankings(){
   s+=`<rect x="${x(selected)-15}" y="${f.t-7}" width="30" height="${f.ih+7}" fill="#c6d5c0" opacity=".2" rx="6"/><line x1="${x(selected)}" x2="${x(selected)}" y1="${f.t}" y2="${f.t+f.ih}" stroke="#859585" stroke-dasharray="3 4"/>`;
   names.forEach(name=>{const pts=rows.filter(r=>r.optimizer===name).sort((a,b)=>a.batch-b.batch);s+=`<path d="${line(pts,p=>x(p.batch),p=>a.y(p.loss))}" fill="none" stroke="${colors[name]}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;pts.forEach(p=>{if(p.min!==null&&p.max!==null&&p.n>1)s+=`<path d="M${x(p.batch)},${a.y(p.min)}V${a.y(p.max)}M${x(p.batch)-3},${a.y(p.min)}h6M${x(p.batch)-3},${a.y(p.max)}h6" stroke="${colors[name]}" fill="none"/>`;s+=`<circle cx="${x(p.batch)}" cy="${a.y(p.loss)}" r="${p.batch===selected?5.5:3.6}" fill="${colors[name]}" stroke="#fffefa" stroke-width="2"><title>${name}, ${batchName(p.batch)}: ${p.loss.toFixed(6)} nats, n=${p.n}</title></circle>`;});});
   $('ranking-chart').innerHTML=`<title id="ranking-chart-title">Measured validation losses under ${family==='standard_wd'?'weight decay':'HyperBall'}; ${batchName(selected)} selected</title>${s}`;
-  $('rank-legend').innerHTML=names.map(n=>`<span><i class="dot" style="background:${colors[n]}"></i>${n}</span>`).join('');
+  $('rank-legend').innerHTML=names.map(n=>`<span><i class="trace-swatch" style="color:${colors[n]}" aria-hidden="true"></i>${n}</span>`).join('');
   const sorted=all.filter(r=>r.batch===selected).sort((a,b)=>a.loss-b.loss);
   $('rank-list').innerHTML=sorted.map((r,i)=>`<div data-optimizer="${r.optimizer}" class="rank-row ${i===0?'first':''}"><span class="rank-name"><span class="rank-number">${i+1}</span><i class="dot" style="background:${colors[r.optimizer]}"></i>${r.optimizer}</span><span class="rank-value">${r.loss.toFixed(4)} <small>n=${r.n}</small></span></div>`).join('');
   if(!reducedMotion.matches)document.querySelectorAll('.rank-row').forEach(row=>{const previous=oldRanks.get(row.dataset.optimizer);if(previous!==undefined){const dy=previous-row.getBoundingClientRect().top;if(dy)row.animate([{transform:`translateY(${dy}px)`},{transform:'translateY(0)'}],{duration:350,easing:'cubic-bezier(.22,1,.36,1)'});}});
@@ -76,7 +80,7 @@ function configureHero(){
 }
 function drawHero(time){
   const canvas=$('hero-canvas'),{ctx,w,h,dpr}=canvasSize(canvas);
-  const ox=w*.5,oy=h*.75;
+  const ox=w*.5,oy=h*.68;
   const project=(x,y)=>[ox+(x-y)*w*.155,oy+(x+y)*h*.11-Math.log1p(.5*(x*x+20*y*y))*h*.20];
   const key=`${w}:${h}:${dpr}:${document.documentElement.dataset.theme}`;
   if(heroBackdrop.key!==key){
@@ -88,6 +92,7 @@ function drawHero(time){
   if(heroBackdrop.paths!==hero.paths){
     heroBackdrop.paths=hero.paths;
     heroBackdrop.points=Object.fromEntries(['sgd','newton'].map(m=>[m,hero.paths[m].map(p=>project(...p.w))]));
+    heroBackdrop.history=null;
     // Asymmetric vertical margins keep the minimum low while fitting both paths.
     const top=oy-26,bottom=h-oy-26;
     const framed=Object.fromEntries(['sgd','newton'].map(m=>[m,heroBackdrop.points[m].map(([x,y])=>({w:[x-ox,y<=oy?oy-y:(y-oy)*top/bottom]}))]));
@@ -119,6 +124,19 @@ function drawHero(time){
     ctx.strokeStyle=palette.muted;ctx.globalAlpha=alpha*.5;ctx.lineWidth=1.1/scale;ctx.stroke(mesh.strong);
   }
   ctx.restore();
+  if(!heroBackdrop.history||camera.end<heroBackdrop.historyEnd){
+    heroBackdrop.history=Object.fromEntries(['sgd','newton'].map(m=>{const path=new Path2D();path.moveTo(...heroBackdrop.points[m][0]);return [m,path];}));
+    heroBackdrop.historyEnd=0;
+  }
+  for(const method of ['sgd','newton']){
+    const path=heroBackdrop.history[method],points=heroBackdrop.points[method];
+    for(let i=heroBackdrop.historyEnd+1;i<=camera.end;i++)path.lineTo(...points[i]);
+  }
+  heroBackdrop.historyEnd=camera.end;
+  ctx.save();ctx.translate(ox,oy);ctx.scale(scale,scale);ctx.translate(-ox,-oy);
+  ctx.globalAlpha=.32;ctx.lineWidth=1.7/scale;ctx.lineJoin='round';
+  for(const method of ['sgd','newton']){ctx.strokeStyle=colors[method];ctx.stroke(heroBackdrop.history[method]);}
+  ctx.restore();
   ['sgd','newton'].forEach(method=>{
     const all=hero.paths[method],points=heroBackdrop.points[method],end=camera.end,next=Math.min(end+1,all.length-1);
     const fraction=progress*(all.length-1)-end;
@@ -134,9 +152,8 @@ function drawHero(time){
     ctx.beginPath();ctx.arc(...tip,8,0,Math.PI*2);ctx.strokeStyle=colors[method];ctx.globalAlpha=.3;ctx.lineWidth=1;ctx.stroke();ctx.globalAlpha=1;
   });
   ctx.font='12px "Essay Sans",sans-serif';ctx.fillStyle=palette.muted;
-  ctx.beginPath();ctx.arc(ox,oy,2.5,0,Math.PI*2);ctx.fill();ctx.fillText('minimum',ox+9,oy+17);
+  ctx.beginPath();ctx.arc(ox,oy,2.5,0,Math.PI*2);ctx.fill();ctx.textAlign='left';ctx.fillText('minimum',ox+12,oy+17);
   if(camera.from===0){const start=view(project(...hero.start));ctx.beginPath();ctx.arc(...start,4,0,Math.PI*2);ctx.strokeStyle=palette.ink;ctx.lineWidth=1;ctx.stroke();ctx.fillText('same start',start[0]+10,start[1]-10);}
-  ctx.fillText('w₁ · flat + noisy',24,h-20);ctx.fillText('w₂ · sharp + noiseless',w-146,23);
   const zoomText=camera.zoom.toFixed(1)+'× view';if($('hero-view').textContent!==zoomText)$('hero-view').textContent=zoomText;
   canvas.dataset.zoom=camera.zoom.toFixed(3);canvas.dataset.duration=hero.duration.toFixed(0);canvas.dataset.progress=progress.toFixed(3);
 }
@@ -168,7 +185,7 @@ document.fonts.ready.then(()=>{heroBackdrop.key='';drawHero(heroTime);simLayer.k
 const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:2,progress:0,playing:false,paths:{},tuned:{},last:0};
 let simRAF=0,simConfigRAF=0,simVisible=true;
 const simLayer={canvas:document.createElement('canvas'),key:'',paths:null,end:-1,painted:-1,
-  trails:{sgd:document.createElement('canvas'),newton:document.createElement('canvas')}};
+  trails:{sgd:document.createElement('canvas'),newton:document.createElement('canvas')},history:{}};
 const simLoss={key:'',paths:null,end:-1,curves:{}};
 const simCamera={mode:reducedMotion.matches?'overview':'auto',paths:null,prepared:null,view:null,size:''};
 const simDetail={painted:''};
@@ -189,7 +206,7 @@ function configureSimulation(){
 }
 function renderRisk(){
   const max=Math.max(sim.tuned.sgd.total,sim.tuned.newton.total,1e-15);
-  $('sim-risk').innerHTML=['sgd','newton'].map(m=>{const r=sim.tuned[m];return `<div class="risk-label"><span><i class="dot" style="background:${colors[m]}"></i>${m==='sgd'?'SGD':'Newton'} <small>η = ${r.eta.toPrecision(3)}</small></span><span>${r.total.toPrecision(3)}</span></div><div class="risk-track"><div style="background-color:${colors[m]};width:${r.bias/max*100}%" title="Initialization bias ${r.bias}"></div><div class="variance" style="background-color:${colors[m]};width:${r.variance/max*100}%" title="Noise contribution ${r.variance}"></div></div>`;}).join('');
+  $('sim-risk').innerHTML=['sgd','newton'].map(m=>{const r=sim.tuned[m];return `<div class="risk-label"><span><i class="dot" style="background:${colors[m]}"></i>${m==='sgd'?'SGD':'Newton'} <small>${mathMarkup(mathVariable("η")+`<mo>=</mo><mn>${r.eta.toPrecision(3)}</mn>`)}</small></span><span>${r.total.toPrecision(3)}</span></div><div class="risk-track"><div style="background-color:${colors[m]};width:${r.bias/max*100}%" title="Initialization bias ${r.bias}"></div><div class="variance" style="background-color:${colors[m]};width:${r.variance/max*100}%" title="Noise contribution ${r.variance}"></div></div>`;}).join('');
   const winner=sim.tuned.sgd.total<sim.tuned.newton.total?'SGD':'Newton',a=sim.tuned.sgd.total,b=sim.tuned.newton.total;
   $('sim-takeaway').innerHTML=Math.abs(a-b)<1e-12?'<strong>The methods are effectively tied in this setting.</strong> Change the geometry or the noise to explore another regime.':`<strong>${winner} has lower expected final loss here.</strong> ${sim.batch<=16?'With many noisy updates, the two methods balance residual error and injected noise differently. Try the large-batch preset.':'With fewer, cleaner updates, curvature rescaling can become more valuable. Try changing the noise or the starting point.'}`;
 }
@@ -211,11 +228,12 @@ function renderLandscape(){
     back.save();back.beginPath();back.rect(9,0,w-18,h);back.clip();
     for(let k=1;k<18;k++){const rx=k*.32*scale,ry=rx/Math.sqrt(sim.sharp);back.beginPath();back.ellipse(cx,cy,rx,ry,0,0,2*Math.PI);back.strokeStyle=simLayer.palette[k%3===0?'grid-strong':'grid'];back.lineWidth=k%3===0?1.1:.7;back.stroke();}
     back.setLineDash([3,5]);back.beginPath();back.moveTo(10,cy);back.lineTo(w-10,cy);back.moveTo(cx,5);back.lineTo(cx,h-10);back.strokeStyle=simLayer.palette['grid-strong'];back.lineWidth=.6;back.stroke();back.restore();
-    back.font='11px "Essay Sans",sans-serif';back.fillStyle=simLayer.palette.muted;back.fillText('w₁ →',w-40,cy-8);back.fillText('w₂',cx+9,14);
+
   }
   // Keep every simulated update. Only append the newly revealed segments.
   if(simLayer.paths!==sim.paths||end<simLayer.end){
     simLayer.paths=sim.paths;simLayer.end=0;simLayer.painted=-1;
+    simLayer.history=Object.fromEntries(['sgd','newton'].map(m=>{const path=new Path2D();path.moveTo(...sim.paths[m][0].w);return [m,path];}));
     Object.values(simLayer.trails).forEach(canvas=>{canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.getContext('2d').setTransform(dpr,0,0,dpr,0,0);});
   }
   const frameKey=`${key}:${camera.scale}:${end}:${simCamera.mode}`;
@@ -224,7 +242,7 @@ function renderLandscape(){
     const trail=simLayer.trails[m].getContext('2d'),pts=sim.paths[m];
     if(end>simLayer.end){
       trail.beginPath();trail.moveTo(X(pts[simLayer.end].w[0]),Y(pts[simLayer.end].w[1]));
-      for(let i=simLayer.end+1;i<=end;i++)trail.lineTo(X(pts[i].w[0]),Y(pts[i].w[1]));
+      for(let i=simLayer.end+1;i<=end;i++){trail.lineTo(X(pts[i].w[0]),Y(pts[i].w[1]));simLayer.history[m].lineTo(...pts[i].w);}
       trail.strokeStyle=colors[m];trail.lineWidth=1.9;trail.stroke();
     }
   });
@@ -234,11 +252,18 @@ function renderLandscape(){
   if(simCamera.mode==='auto')drawFocusedBackdrop(ctx,w,h,camera);else ctx.drawImage(simLayer.canvas,0,0,w,h);
   const zoomText=camera.zoom.toFixed(1)+'×';if($('sim-zoom').textContent!==zoomText)$('sim-zoom').textContent=zoomText;
   $('sim-overview').hidden=simCamera.mode==='overview';
-  const windowText=simCamera.mode==='auto'&&end>camera.from?`Last ${fmt((end-camera.from)*sim.batch)} samples`:'';
+  const windowText=simCamera.mode==='auto'&&end>0?'Full trace':'';
   if($('sim-window').textContent!==windowText)$('sim-window').textContent=windowText;
   $('landscape').dataset.zoom=camera.zoom.toFixed(3);$('landscape').dataset.view=simCamera.mode;
   ctx.save();ctx.beginPath();ctx.rect(9,0,w-18,h);ctx.clip();
   const detailX=x=>cx+x*camera.scale,detailY=y=>cy-y*camera.scale;
+  if(simCamera.mode==='auto'){
+    // Stroke the accumulated model-space vectors at the current camera scale.
+    ctx.save();ctx.translate(cx,cy);ctx.scale(camera.scale,-camera.scale);
+    ctx.globalAlpha=.32;ctx.lineWidth=1.7/camera.scale;ctx.lineJoin='round';
+    for(const m of ['sgd','newton']){ctx.strokeStyle=colors[m];ctx.stroke(simLayer.history[m]);}
+    ctx.restore();
+  }
   ['sgd','newton'].forEach(m=>{
     if(simCamera.mode==='overview'){ctx.globalAlpha=.85;ctx.drawImage(simLayer.trails[m],0,0,w,h);}
     else for(let band=0;band<4;band++){
@@ -278,7 +303,7 @@ function drawFocusedBackdrop(ctx,w,h,camera){
     const y=cy-i*tickY*scale;ctx.beginPath();ctx.moveTo(cx-3,y);ctx.lineTo(cx+3,y);ctx.stroke();
     ctx.textAlign='left';ctx.fillText(SimulationCamera.tickLabel(i*tickY,tickY),cx+7,y+3);
   }
-  ctx.textAlign='left';ctx.font='500 13px "Essay Sans",sans-serif';ctx.fillStyle=palette.ink;ctx.fillText('w₁',w-29,cy-8);ctx.fillText('w₂',cx+9,16);ctx.restore();
+  ctx.restore();
 }
 function renderOverview(camera,w,h){
   const {ctx,w:mw,h:mh}=canvasSize($('landscape-overview'));
@@ -309,7 +334,7 @@ function renderLoss(){
     simLoss.key=key;simLoss.paths=sim.paths;simLoss.end=-1;
     chart.setAttribute('viewBox',`0 0 ${width} 170`);
     const f=frame(width,170,{l:43,r:12,t:12,b:28}),x=s=>f.l+s/NQM.T*f.iw;
-    const a=axes(f,ymin,ymax,[[0,'0'],[2048,'2,048'],[4096,'4,096 samples']],x,{dark:true,format:v=>(10**v).toExponential(0)});
+    const a=axes(f,ymin,ymax,[[0,'0'],[2048,'2,048'],[4096,'4,096 samples']],x,{dark:true,format:v=>scientificSVG(10**v)});
     chart.innerHTML=a.svg+['sgd','newton'].map(m=>`<path id="sim-loss-${m}" fill="none" stroke="${colors[m]}" stroke-width="1.6"/>`).join('');
     ['sgd','newton'].forEach(m=>{
       const pts=sim.paths[m],stride=Math.max(1,Math.ceil((pts.length-1)/350));
@@ -392,7 +417,7 @@ function drawIntervention(){
   $('anchor-strip').innerHTML=Array.from({length:12},(_,i)=>{const a=(i+1)*1000,r=DATA.recovery.find(r=>r.anchor===a&&r.arm==='top-768 held');return `<button class="anchor-cell ${a===anchor?'active':''}" data-anchor="${i+1}" aria-pressed="${a===anchor}" aria-label="Step ${a}, top 768 recovery ${r.percent}%"><span>${i+1}K</span><i><span style="height:${Math.max(1,r.percent/65*100)}%"></span></i><strong>${r.percent.toFixed(1)}%</strong></button>`;}).join('');
   document.querySelectorAll('.anchor-cell').forEach(b=>b.addEventListener('click',()=>{$('anchor').value=b.dataset.anchor;drawIntervention();}));
   dispatchEvent(new Event('batchsize:intervention'));
-  $('endpoint-table').innerHTML='<table><caption>Available branch endpoints at step '+fmt(anchor)+'</caption><thead><tr><th scope="col">Branch</th><th scope="col">Validation loss</th><th scope="col">Penalty (10⁻³ nats)</th></tr></thead><tbody>'+rows.map(r=>`<tr><th scope="row">${r.arm}</th><td>${r.loss.toFixed(6)}</td><td>${r.penalty.toFixed(2)}</td></tr>`).join('')+'</tbody></table>';
+  $('endpoint-table').innerHTML='<table><caption>Available branch endpoints at step '+fmt(anchor)+'</caption><thead><tr><th scope="col">Branch</th><th scope="col">Validation loss</th><th scope="col">Penalty (10<sup>−3</sup> nats)</th></tr></thead><tbody>'+rows.map(r=>`<tr><th scope="row">${r.arm}</th><td>${r.loss.toFixed(6)}</td><td>${r.penalty.toFixed(2)}</td></tr>`).join('')+'</tbody></table>';
 }
 $('anchor').addEventListener('input',drawIntervention);$('held').addEventListener('change',drawIntervention);
 $('show-random').addEventListener('click',()=>{$('held').value='random-768 held';drawIntervention();});
