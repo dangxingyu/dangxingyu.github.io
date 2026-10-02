@@ -3,7 +3,7 @@
 (function () {
   const data = window.SCALING_RULE_DATA, node = id => document.getElementById(id);
   if (!data || !node('rule-lab')) return;
-  const choiceNames = { fixed: 'Fixed', sqrt: 'Square-root', linear: 'Linear', retention: 'Preserve decay' };
+  const choiceNames = { fixed: 'Fixed', sqrt: 'Square-root', linear: 'Linear', retention: 'EMA' };
   const variables = { etaM: mathVariable('η','M'), etaA: mathVariable('η','A'), lambdaM: mathVariable('λ','M'), lambdaA: mathVariable('λ','A'), mu: mathVariable('μ'), beta1: mathVariable('β',1), beta2: mathVariable('β',2) };
   const state = { task: 'llm', view: 'gap', range: 'detail', index: 0, selected: '', preset: 'common', running: false, visible: false, frame: 0, started: 0, from: 0, to: 0, geometry: null };
   const setting = () => data.settings[state.task];
