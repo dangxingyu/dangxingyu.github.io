@@ -26,13 +26,26 @@ must remain explicitly distinguished.
   readable without relying on hue. Expected losses are shown beside the winner.
 - The held-rank lens uses measured ranks only. Arrow keys move between available
   ranks and focus survives a chart redraw. Missing branches remain “Not run.”
-- The hero caches its static landscape. Hero and sandbox animation loops stop when
+- The hero caches projected trajectories and vector meshes at each drawing scale.
+  Playback takes 1.6–4.2 seconds according to the number of updates; large batches
+  smoothly interpolate between actual optimizer states. This is a visual tween,
+  not an additional optimizer update. Its camera follows the recent paths and
+  holds the completed view until explicit Replay.
+  Hero and sandbox animation loops stop when
   their view is hidden or the document loses visibility. Manual pause freezes the
   current frame. Reduced-motion startup shows a static completed hero trajectory.
 - The sandbox caches its contours and appends every newly revealed trajectory segment
   to offscreen canvases. The loss plot retains its axes and precomputes a bounded
   display curve, with the exact current update as its endpoint. Theme, size, replay,
   and experiment changes invalidate the relevant drawing caches.
+- `simulation-camera.js` frames both trajectories using rolling coordinate bounds.
+  Auto zoom follows a bounded recent window, retaining original parameter coordinates
+  and adaptive numeric ticks. Conservative future bounds and gradual log-scale easing
+  keep zoom monotonic within a run. Contours use fixed model-space levels; hero mesh
+  resolutions crossfade instead of switching abruptly. The focused main view draws
+  contours directly, with a 2×–3× backing resolution for clear lines and labels. The inset keeps the full path and current viewport.
+  Overview restores the complete trajectory; shared URLs retain that choice.
+  Reduced-motion startup selects Overview. Click-to-place uses the current scale.
 - Learning-rate results are reused in a 24-entry cache keyed by batch, curvature,
   noise, and initial point; reseeding retains the same tuning. Slider inputs coalesce
   within a browser frame. Playback defaults to 2×, offers 1× and 4×, and is preserved
@@ -68,7 +81,11 @@ worker thread, checks that rapid changes publish only the newest geometry, and
 checks cancellation of the cooperative fallback.
 It also checks that incremental drawing retains every physical trajectory segment,
 the loss plot ends at the actual current update, replay and cache invalidation work,
-playback speed advances correctly, and offscreen animation pauses.
+playback speed advances correctly, and offscreen animation pauses. Camera checks
+cover both methods at different batches, noise levels and display widths, and verify
+that the recent window remains bounded and both endpoints fit within the view.
+They also verify that zoom never reverses, adjacent frames change gradually, and
+the hero holds its completed frame until Replay.
 
 Browser checks should cover 320/390 px phones, a tablet, and desktop layouts in both
 themes; menu navigation and Escape; phase-map controls and cache reuse; keyboard
