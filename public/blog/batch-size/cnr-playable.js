@@ -9,9 +9,9 @@
     const x = b => f.l + Math.log2(b)/8*f.iw, y = ratio => f.t + f.ih*(1-Math.log10(ratio)/Math.log10(400));
     let markup='<title>Independently tuned SignSGD learning-rate ratios, CNR '+selected.cnr+', fixed momentum 0.9 and 4,096 samples</title>';
     for(const ratio of [1,10,100]){
-      markup+=`<line x1="${f.l}" x2="${f.w-f.r}" y1="${y(ratio)}" y2="${y(ratio)}" stroke="${token('--line')}" stroke-dasharray="2 5"/>`+svgText(f.l-12,y(ratio)+5,String(ratio),'font-size="16" text-anchor="end"');
+      markup+=`<line x1="${f.l}" x2="${f.w-f.r}" y1="${y(ratio)}" y2="${y(ratio)}" stroke="${token('--line')}" stroke-dasharray="2 5"/>`+svgText(f.l-12,y(ratio)+5,ratio+'×','font-size="16" text-anchor="end"');
     }
-    for(const b of [1,4,16,64,256])markup+=svgText(x(b),f.h-13,String(b),`font-size="16" text-anchor="${b===256?'end':'middle'}"`);
+    for(const b of (f.w<330?[1,16,256]:[1,4,16,64,256]))markup+=svgText(x(b),f.h-13,String(b),`font-size="16" text-anchor="${b===256?'end':'middle'}"`);
     const guides=Array.from({length:81},(_,i)=>2**(i/10));
     markup+=`<path d="${line(guides,b=>x(b),b=>y(b))}" stroke="${token('--muted')}" stroke-dasharray="2 4" fill="none" opacity=".65"/>`;
     markup+=`<path d="${line(guides,b=>x(b),b=>y(Math.sqrt(b)))}" stroke="${token('--muted')}" stroke-dasharray="7 3 2 3" fill="none" opacity=".65"/>`;

@@ -406,9 +406,12 @@ function drawScaling(){
   $('scale-alpha-output').textContent=alpha.toFixed(2);$('scale-batch-output').textContent=ratio+'×';
   const f=researchFrame('scaling-chart',640,340),x=r=>f.l+Math.log2(r)/6*f.iw;
   const cnrs=[1,.001],vals=cnrs.map(c=>Array.from({length:121},(_,i)=>({r:2**(i/20),v:NQM.displacement(c,2**(i/20),alpha)})));
-  const ymax=Math.max(1.3,...vals.flat().map(p=>p.v))*1.08;
-  const a=axes(f,0,ymax,[[1,'1'],[4,'4'],[16,'16'],[64,'64']],x,{format:v=>v.toFixed(1)+'×'});let s=a.svg.replaceAll('font-size="12"','font-size="16"');
-  s+=`<line x1="${f.l}" x2="${f.w-f.r}" y1="${a.y(1)}" y2="${a.y(1)}" stroke="#81937c" stroke-dasharray="4 4"/>`;
+  const peak=Math.max(1,...vals.flat().map(p=>p.v)),step=peak<=2?.5:peak<=4?1:2;
+  const ymax=Math.ceil(peak*1.05/step)*step,a={y:v=>f.t+f.ih*(1-v/ymax)};
+  const ticks=[...new Set([...Array.from({length:Math.round(ymax/step)+1},(_,i)=>i*step),1])].sort((a,b)=>a-b);
+  let s='';
+  ticks.forEach(v=>{s+=`<line x1="${f.l}" x2="${f.w-f.r}" y1="${a.y(v)}" y2="${a.y(v)}" stroke="${token(v===1?'--muted':'--line')}"${v===1?' stroke-dasharray="5 4"':''}/>`+svgText(f.l-12,a.y(v)+5,v+'×',`font-size="16" text-anchor="end"${v===1?' font-weight="600"':''}`);});
+  [1,4,16,64].forEach(r=>{s+=svgText(x(r),f.h-13,String(r),`font-size="16" text-anchor="${r===64?'end':'middle'}"`);});
   s+=`<line x1="${x(ratio)}" x2="${x(ratio)}" y1="${f.t}" y2="${f.t+f.ih}" stroke="#9bab9a" stroke-dasharray="2 4"/>`;
   vals.forEach((pts,i)=>{const color=i?colors.newton:colors.sgd;s+=`<path d="${line(pts,p=>x(p.r),p=>a.y(p.v))}" fill="none" stroke="${color}" stroke-width="2.7"/><circle cx="${x(ratio)}" cy="${a.y(NQM.displacement(cnrs[i],ratio,alpha))}" r="5" fill="${color}" stroke="#fffefa" stroke-width="2"/>`;});
   s+=researchAxes(f);$('scaling-chart').innerHTML=s;

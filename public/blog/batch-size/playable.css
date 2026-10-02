@@ -111,7 +111,7 @@
 @media(max-width:760px){.directional-comparison>.light-panel{padding:20px}.directional-local-panel .panel-top{flex-direction:column;gap:14px}.directional-local-panel .scaling-grid,.directional-local-panel .scaling-challenge{grid-template-columns:1fr}.directional-comparison h3{font-size:22px}.cnr-chart-label{font-size:10px}.cnr-fit>strong{font-size:44px}}
 @media(max-width:370px){.directional-comparison>.light-panel{padding:15px}.cnr-paper-legend{gap:12px;font-size:10px}}
 .cnr-x-label{text-align:center;font-size:11px;color:var(--muted);margin:0 0 8px}.cnr-x-label :is(math,.blog-math){font-size:13px}
-@media(min-width:1001px){.directional-comparison .panel-top{min-height:113px}.directional-local-panel .panel-top{justify-content:space-between}}
+@media(min-width:1001px){.directional-comparison .panel-top{min-height:56px}.directional-local-panel .panel-top{justify-content:space-between}}
 .rule-presets button:not(.active),.rule-batch-ticks button,.cnr-presets button{background:transparent}.rule-presets button:not(.active):hover{background:var(--sunken)}
 @media(max-width:760px){.cnr-presets button{min-height:44px}}
 /* Coordinate quantities and line keys stay readable at their actual on-screen size. */
@@ -194,3 +194,23 @@
 .blog-math>.katex{font-size:1em}
 .blog-math.math-block{display:block}
 .rule-search-summary>p small{display:block;font-size:11px;line-height:1.6;margin-top:7px;color:var(--muted)}
+
+/* Normalized quantities share a clear reference and explicit KaTeX sizes. */
+.directional-comparison .figure-axis-heading{min-height:80px;align-items:center;margin-bottom:12px}
+.directional-comparison .figure-axis-heading>div{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 18px;align-items:center}
+.directional-comparison .figure-axis-name{grid-column:1;grid-row:1;font-size:17px;line-height:1.4}
+.directional-comparison .figure-axis-name::before{content:none}
+.figure-axis-reference{grid-column:1;grid-row:2;font-size:14px;line-height:1.5;color:var(--muted)}
+.directional-comparison .figure-axis-quantity{grid-column:2;grid-row:1/3;min-height:0;margin:0}
+.directional-comparison .figure-axis-quantity .blog-math{font-size:24px;line-height:1.4}
+.directional-comparison .figure-x-axis .blog-math{font-size:20px}
+.directional-comparison .figure-legend .blog-math{font-size:17px}
+.directional-local-panel .control label .blog-math{font-size:18px}
+.scaling-rule-formula{grid-column:1/-1;margin:0 0 18px;color:var(--ink)}
+.scaling-rule-formula .blog-math{font-size:22px}
+.tuning-note>p:first-child{margin-top:0}
+@media(max-width:760px){
+ .directional-comparison .figure-axis-name{font-size:16px}
+ .directional-comparison .figure-axis-quantity .blog-math{font-size:22px}
+ .figure-axis-reference{font-size:13px}
+}
