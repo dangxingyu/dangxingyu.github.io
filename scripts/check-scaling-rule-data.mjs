@@ -38,6 +38,17 @@ for(const [key,s] of Object.entries(data.settings)){
 assert.equal(total,4752);
 assert.deepEqual(data.settings.llm.rules[0].losses,[3.26969,3.28192,3.31183,3.37977]);
 assert.equal(data.settings.llm.rules[0].meanRegret,.00151);
+const llm=data.settings.llm;
+const paperRecipes=[
+  [{etaM:'fixed',etaA:'fixed',lambdaM:'fixed',mu:'fixed',beta1:'fixed',beta2:'fixed'},12],
+  [{etaM:'sqrt',etaA:'sqrt',lambdaM:'fixed',mu:'fixed',beta1:'fixed',beta2:'fixed'},22],
+  [{etaM:'linear',etaA:'sqrt',lambdaM:'fixed',mu:'retention',beta1:'retention',beta2:'retention'},160]
+];
+for(const [choices,rank] of paperRecipes){
+  const rule=llm.rules.find(r=>Object.entries(choices).every(([key,value])=>r.choices[key]===value));
+  assert.equal(rule.rank,rank,'The no-scaling note uses original-grid counterparts of the paper’s comparison recipes.');
+  assert.equal(1+llm.rules.filter(r=>r.meanRegret<rule.meanRegret).length,rank);
+}
 assert.equal(data.settings.cifar.rules[0].choices.etaM,'sqrt');
 assert.equal(data.settings.cifar.seed,42);
 assert.deepEqual(data.settings.llm.retunedBaseline.map(p=>p.loss),[3.26553,3.27735,3.310845,3.36592]);

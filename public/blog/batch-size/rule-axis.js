@@ -1,4 +1,4 @@
-/* Both atlas views use linear loss axes; the overview always retains the full extent. */
+/* Linear loss axes: selected-rule detail, full range, and a 95th-percentile overview. */
 'use strict';
 (function () {
   function domain(low, high, zero, padding) {
@@ -20,7 +20,13 @@
     const detail = domain(Math.min(...focused), Math.max(...focused), zero, .15);
     detail.bottom = Math.max(detail.bottom, full.bottom);
     detail.top = Math.min(detail.top, full.top);
-    return { full, detail };
+    const ordered = [...values].sort((a,b)=>a-b), index = .95 * (ordered.length-1);
+    const lower = Math.floor(index), fraction = index-lower;
+    const quantile = ordered[lower] + (ordered[Math.ceil(index)]-ordered[lower])*fraction;
+    const bottom = zero ? 0 : domain(Math.min(...all),quantile,false,0).bottom;
+    const percentile = {bottom,top:Math.max(quantile,bottom+.00001),
+      precision:Math.max(0,2-Math.floor(Math.log10(Math.max(quantile-bottom,.00001))))};
+    return { full, detail, percentile };
   }
   window.RuleAtlasAxis = { domains };
 })();

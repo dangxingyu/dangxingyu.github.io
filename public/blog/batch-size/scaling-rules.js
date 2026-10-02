@@ -5,7 +5,7 @@
   if (!data || !node('rule-lab')) return;
   const choiceNames = { fixed: 'Fixed', sqrt: 'Square-root', linear: 'Linear', retention: 'EMA' };
   const variables = { etaM: mathVariable('η','M'), etaA: mathVariable('η','A'), lambdaM: mathVariable('λ','M'), lambdaA: mathVariable('λ','A'), mu: mathVariable('μ'), beta1: mathVariable('β',1), beta2: mathVariable('β',2) };
-  const state = { task: 'llm', view: 'gap', range: 'detail', index: 0, selected: '', preset: 'common', running: false, visible: false, frame: 0, started: 0, from: 0, to: 0, geometry: null };
+  const state = { task: 'llm', view: 'gap', range: 'detail', index: 0, selected: '', preset: 'common', running: false, visible: false, frame: 0, last: 0, elapsed: 0, holding: true, from: 0, to: 0, geometry: null };
   const setting = () => data.settings[state.task];
   const selected = () => setting().rules.find(rule => rule.id === state.selected);
   const batchLabel = batch => state.task === 'llm' ? ({262144:'256K',524288:'512K',1048576:'1M',2097152:'2M'})[batch] : batch>=1024 ? `${batch/1024}K` : fmt(batch);
@@ -36,17 +36,18 @@
     const f = frame(w,h,{l:w<360?60:72,r:22,t:20,b:43}), shown=indices();
     const values=s.rules.flatMap(r=>shown.map(i=>plotValue(r,i)));
     const references=shown.map(i=>state.view==='gap'?0:bestLoss(i));
-    const domains=window.RuleAtlasAxis.domains(values,references,shown.map(i=>plotValue(selected(),i)),state.view==='gap');
+    const focus=state.running&&state.preset==='batch'?s.rules.filter(r=>s.bestAtBatch.includes(r.id)):[selected()];
+    const domains=window.RuleAtlasAxis.domains(values,references,focus.flatMap(r=>shown.map(i=>plotValue(r,i))),state.view==='gap');
     const domain=domains[state.range], {bottom,top,step:tickStep,precision}=domain;
     const x = b => f.l + Math.log2(b/s.batches[shown[0]]) / Math.log2(s.batches[shown.at(-1)]/s.batches[shown[0]]) * f.iw;
     const y = value => f.t + f.ih * (1 - (value-bottom)/(top-bottom));
-    state.geometry = {f,x,y,shown,domain,full:domains.full,points:s.rules.map(r => shown.map(i => [x(s.batches[i]),y(plotValue(r,i))]))};
+    state.geometry = {f,x,y,shown,domain,full:domains.full,percentile:domains.percentile,points:s.rules.map(r => shown.map(i => [x(s.batches[i]),y(plotValue(r,i))]))};
     const plotted=s.rules.length*shown.length;
     node('rule-axis-title').textContent=state.view==='gap'?'Loss gap to best tuned rule':'Validation loss';
     node('rule-axis-quantity').innerHTML=mathMarkup(state.view==='gap'?'<msub><mi>L</mi><mtext>rule</mtext></msub><mo>−</mo><msub><mi>L</mi><mtext>best</mtext></msub>':'<msub><mi>L</mi><mtext>rule</mtext></msub>')+'<span class="figure-axis-unit">nats</span>';
     node('rule-coverage').textContent='';
     node('rule-range-tabs').querySelectorAll('button').forEach(b=>{const active=b.dataset.ruleRange===state.range;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active);});
-    let markup = `<title>${s.rules.length} scaling-rule curves and ${plotted} measured runs. ${state.view==='gap'?'Nonnegative gaps to the best recorded grid or retuning loss.':'Validation losses.'} Linear loss axis. ${state.range==='detail'?'Detail of the selected rule; all runs remain visible in the full-range overview.':'Full range of every measured rule.'} Click a curve to highlight it. Left and right arrow keys select rules in their overall grid rank order.</title><defs><clipPath id="rule-main-clip"><rect x="${f.l-5}" y="${f.t}" width="${f.iw+10}" height="${f.ih+6}"/></clipPath></defs>`;
+    let markup = `<title>${s.rules.length} scaling-rule curves and ${plotted} measured runs. ${state.view==='gap'?'Nonnegative gaps to the best recorded grid or retuning loss.':'Validation losses.'} Linear loss axis. ${state.range==='detail'?'Detail of the selected rule; Full range shows every endpoint.':'Full range of every measured rule.'} Click a curve to highlight it. Left and right arrow keys select rules in their overall grid rank order.</title><defs><clipPath id="rule-main-clip"><rect x="${f.l-5}" y="${f.t}" width="${f.iw+10}" height="${f.ih+6}"/></clipPath></defs>`;
     for (let i=0;i<=Math.round((top-bottom)/tickStep);i++) {
       const value=bottom+i*tickStep;
       markup += `<line x1="${f.l}" x2="${w-f.r}" y1="${y(value)}" y2="${y(value)}" stroke="${token('--line')}" ${value?'stroke-dasharray="2 5"':''}/>`;
@@ -66,26 +67,27 @@
     markup += `</g><path class="rule-baseline" d="${line(baseline,p=>p[0],p=>p[1])}" fill="none" stroke="${token('--ink')}" stroke-width="1.4" stroke-dasharray="6 4"/><g id="rule-selection"></g><line id="rule-cursor" stroke="${token('--orange')}" stroke-dasharray="3 5" opacity=".5"/><circle id="rule-current-point" r="7" fill="${token('--orange')}" stroke="${token('--surface')}" stroke-width="2"/></g>`;
     svg.innerHTML = markup+researchAxes(f);
     svg.setAttribute('tabindex','0');
-    svg.setAttribute('aria-label',`${s.rules.length} complete rules, ${plotted} measured runs. ${state.range==='detail'?'Detail of the selected rule; full range in the overview.':'Full range.'} Click a curve; use left and right arrow keys to select rules.`);
+    svg.setAttribute('aria-label',`${s.rules.length} complete rules, ${plotted} measured runs. ${state.range==='detail'?'Detail of the selected rule; use Full range to see every endpoint.':'Full range.'} Click a curve; use left and right arrow keys to select rules.`);
     svg.dataset.rules = s.rules.length; svg.dataset.runs = plotted;svg.dataset.view=state.view;svg.dataset.yScale='linear';svg.dataset.range=state.range;svg.dataset.yMin=bottom;svg.dataset.yMax=top;
     rebuildOverview();
     updateSelection();
   }
   function rebuildOverview() {
     const s=setting(), g=state.geometry, svg=node('rule-overview'), h=62;
-    const f=frame(g.f.w,h,{l:g.f.l,r:g.f.r,t:12,b:10}), {bottom,top,precision}=g.full;
+    const f=frame(g.f.w,h,{l:g.f.l,r:g.f.r,t:12,b:10}), {bottom,top,precision}=g.percentile;
     const y=value=>f.t+f.ih*(1-(value-bottom)/(top-bottom));
     g.overview={f,x:g.x,y,points:s.rules.map(r=>g.shown.map(i=>[g.x(s.batches[i]),y(plotValue(r,i))]))};
     svg.setAttribute('viewBox',`0 0 ${f.w} ${h}`);
-    let markup=`<title>Full linear range of all ${s.rules.length} rules and ${s.measurementCount} measured runs. The shaded band is the main plot's vertical range. Click a curve to inspect its rule.</title><defs><clipPath id="rule-overview-clip"><rect x="${f.l-4}" y="${f.t-3}" width="${f.iw+8}" height="${f.ih+6}"/></clipPath></defs>`;
+    let markup=`<title>Linear view capped at the 95th percentile of the ${s.measurementCount} original run values, pooled across all target batches. Endpoints above this limit are clipped; use Full range in the main plot to see them. The shaded band is the main plot's vertical range. Click a curve to inspect its rule.</title><defs><clipPath id="rule-overview-clip"><rect x="${f.l-4}" y="${f.t}" width="${f.iw+8}" height="${f.ih+3}"/></clipPath></defs>`;
     [bottom,top].forEach(v=>{markup+=svgText(f.l-12,y(v)+5,v.toFixed(precision),'font-size="14" text-anchor="end"');});
-    const bandTop=y(Math.min(top,g.domain.top)),bandBottom=y(Math.max(bottom,g.domain.bottom));
+    const clamp=value=>Math.max(bottom,Math.min(top,value));
+    const bandTop=y(clamp(g.domain.top)),bandBottom=y(clamp(g.domain.bottom));
     markup+=`<rect x="${f.l}" y="${bandTop}" width="${f.iw}" height="${bandBottom-bandTop}" fill="${token('--orange')}" fill-opacity=".08" stroke="${token('--orange')}" stroke-opacity=".35" stroke-width="1"/><g clip-path="url(#rule-overview-clip)"><g class="rule-overview-cloud">`;
     s.rules.forEach((r,i)=>{markup+=`<path data-rule="${r.id}" d="${line(g.overview.points[i],p=>p[0],p=>p[1])}"><title>Rule ${r.rank}: ${recipeText(r)}</title></path>`;});
     const baseline=g.shown.map(i=>[g.x(s.batches[i]),y(state.view==='gap'?0:bestLoss(i))]);
     markup+=`</g><path d="${line(baseline,p=>p[0],p=>p[1])}" fill="none" stroke="${token('--ink')}" stroke-width="1" stroke-dasharray="4 3"/><path id="rule-overview-selection" fill="none" stroke="${token('--orange')}" stroke-width="2" stroke-linejoin="round"/><circle id="rule-overview-current" r="3" fill="${token('--orange')}" stroke="${token('--surface')}" stroke-width="1"/></g><line x1="${f.l}" x2="${f.l}" y1="${f.t}" y2="${h-f.b}" stroke="${token('--muted')}" stroke-width="1"/>`;
     svg.innerHTML=markup;
-    svg.setAttribute('tabindex','0');svg.dataset.rules=s.rules.length;svg.dataset.runs=s.measurementCount;svg.dataset.yScale='linear';svg.dataset.yMin=bottom;svg.dataset.yMax=top;
+    svg.setAttribute('tabindex','0');svg.dataset.rules=s.rules.length;svg.dataset.runs=s.measurementCount;svg.dataset.yScale='linear';svg.dataset.yMin=bottom;svg.dataset.yMax=top;svg.dataset.percentile='95';
   }
   function cursor(position) {
     const g = state.geometry, r = selected(), left = g.shown[Math.floor(position)], right = g.shown[Math.min(Math.floor(position)+1,g.shown.length-1)], fraction = position-Math.floor(position);
@@ -124,22 +126,33 @@
     const s=setting(), value=`${batchLabel(s.batches[index])} ${s.unit} / update`;
     node('rule-target-batch').textContent=value;node('rule-batch').setAttribute('aria-valuetext',value);
     node('rule-batch-ticks').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.ruleBatch===index));
-    if (state.preset==='batch' && state.selected!==s.bestAtBatch[index]) {state.selected=s.bestAtBatch[index];if(state.range==='detail'){rebuildPlot();return;}}
+    if (state.preset==='batch' && state.selected!==s.bestAtBatch[index]) {state.selected=s.bestAtBatch[index];if(state.range==='detail'&&!state.running){rebuildPlot();return;}}
     updateSelection();
   }
   function pause() {
-    state.running=false;cancelAnimationFrame(state.frame);state.frame=0;state.started=0;
+    state.running=false;cancelAnimationFrame(state.frame);state.frame=0;state.last=0;
+    node('rule-atlas').dataset.playbackPhase='paused';
     node('rule-play').innerHTML=reducedMotion.matches?'Next batch <span aria-hidden="true">→</span>':'Play batch changes <span aria-hidden="true">▶</span>';node('rule-play').setAttribute('aria-label',reducedMotion.matches?'Next scaling-rule batch':'Play scaling-rule batch changes');
   }
   function step(ts) {
-    if (!state.running || !state.visible || document.hidden) {state.frame=0;state.started=0;return;}
-    if (!state.started) state.started=ts;
-    const t=Math.min(1,(ts-state.started)/1600), eased=t*t*(3-2*t);
-    cursor(state.from+(state.to-state.from)*eased);
-    if (t===1) {
-      updateBatch(indices()[state.to]);
-      if (state.index===indices().at(-1)) {pause();return;}
-      state.from=indices().indexOf(state.index);state.to=state.from+1;state.started=0;
+    if (!state.running || !state.visible || document.hidden) {state.frame=0;state.last=0;return;}
+    if (state.last) state.elapsed+=Math.min(100,ts-state.last);
+    state.last=ts;
+    node('rule-atlas').dataset.playbackPhase=state.holding?'hold':'move';
+    if (state.holding) {
+      cursor(state.from);
+      if (state.elapsed>=2000) {
+        if (state.index===indices().at(-1)) {pause();return;}
+        state.elapsed=0;state.holding=false;
+      }
+    } else {
+      const t=Math.min(1,state.elapsed/4500), eased=t*t*(3-2*t);
+      cursor(state.from+(state.to-state.from)*eased);
+      if (t===1) {
+        updateBatch(indices()[state.to]);
+        state.from=state.to;state.to=Math.min(state.from+1,indices().length-1);
+        state.elapsed=0;state.holding=true;
+      }
     }
     state.frame=requestAnimationFrame(step);
   }
@@ -201,16 +214,17 @@
     if(state.running){pause();cursor(indices().indexOf(state.index));return;}
     if(state.index===indices().at(-1))updateBatch(indices()[0]);
     if(reducedMotion.matches){updateBatch(indices()[Math.min(indices().indexOf(state.index)+1,indices().length-1)]);return;}
-    state.running=true;state.from=indices().indexOf(state.index);state.to=state.from+1;state.started=0;
+    state.running=true;state.from=indices().indexOf(state.index);state.to=state.from+1;state.last=0;state.elapsed=0;state.holding=true;
+    if(state.preset==='batch'&&state.range==='detail')rebuildPlot();
     node('rule-play').innerHTML='Pause <span aria-hidden="true">Ⅱ</span>';node('rule-play').setAttribute('aria-label','Pause scaling-rule batch changes');
     state.frame=requestAnimationFrame(step);
   });
   new IntersectionObserver(entries=>{
     state.visible=entries[0].isIntersecting;
-    if(!state.visible){cancelAnimationFrame(state.frame);state.frame=0;state.started=0;}
+    if(!state.visible){cancelAnimationFrame(state.frame);state.frame=0;state.last=0;}
     else if(state.running&&!state.frame)state.frame=requestAnimationFrame(step);
   },{threshold:0}).observe(node('rule-lab'));
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(state.frame);state.frame=0;state.started=0;}else if(state.running&&state.visible&&!state.frame)state.frame=requestAnimationFrame(step);});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(state.frame);state.frame=0;state.last=0;}else if(state.running&&state.visible&&!state.frame)state.frame=requestAnimationFrame(step);});
   let resizeFrame=0;
   new ResizeObserver(()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{pause();rebuildPlot();});}).observe(node('rule-atlas'));
   new MutationObserver(()=>{pause();rebuildPlot();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
