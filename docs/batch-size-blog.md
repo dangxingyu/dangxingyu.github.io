@@ -14,6 +14,9 @@ The opening questions are copied verbatim from the paper’s active introduction
 revision 462dc51 is retained; an Overleaf refresh returned HTTP 503 during this
 edit, so a newer revision could not be confirmed.
 
+The article footer contains a single **Submission** link to `batch-size/paper.pdf`.
+Replace its label and URL with arXiv when the preprint is public.
+
 KaTeX typesets all displayed variables from MathML source: italic scalar variables, numeric
 subscripts, bold parameter vectors, and upright optimizer-group subscripts.
 `B` is a batch before scaling, `B′` after scaling, and `κ = B′/B`; toy sample
