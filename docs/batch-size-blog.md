@@ -25,7 +25,10 @@ budget `T = 4096` gives `K = T/B` updates. `hᵢ` is curvature and `cᵢ` is
 single-example noise variance. Matrix/auxiliary learning rates and weight decays
 are `η_M/η_A` and `λ_M/λ_A`; momentum uses `μ, β₁, β₂`. The hero's two
 projected coordinate vectors live in a separate compass legend, outside the
-landscape. Series legends use a line and endpoint matching their plotted marks.
+landscape. Their arrows use the canvas's projection coefficients and update on
+resize: positive w₁ points down-right, positive w₂ down-left. The directions are
+the tangent basis at the minimum. Series legends use a line and endpoint matching
+their plotted marks.
 
 `data/scaling-rules.js` and its JSON download contain every original rule endpoint:
 216 × 4 = 864 language-model runs (seed 1) and 648 × 6 = 3,888 CIFAR-5M runs

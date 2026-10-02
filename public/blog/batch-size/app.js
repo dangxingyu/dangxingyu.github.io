@@ -88,13 +88,27 @@ function configureHero(){
   $('hero-winner').textContent=(hero.tuned.sgd.total<hero.tuned.newton.total?'SGD':'Newton')+' leads at 4K in expectation';
   heroTime=heroPaused?hero.duration:0;updateHeroMotion();drawHero(heroTime);syncHeroPlayback();
 }
+function syncHeroCompass(horizontal,vertical){
+  const svg=document.querySelector('.coordinate-compass svg');
+  const length=Math.hypot(horizontal,vertical),dx=horizontal/length,dy=vertical/length;
+  const origin=[50,31-32*vertical/horizontal];
+  for(const [axis,sign] of [['flat',1],['sharp',-1]]){
+    const tip=[50+sign*32,31],ux=sign*dx,uy=dy;
+    const back=[tip[0]-7*ux,tip[1]-7*uy];
+    svg.querySelector(`[data-compass-axis="${axis}"]`).setAttribute('d',
+      `M${origin[0]} ${origin[1]}L${tip[0]} ${tip[1]}M${back[0]-3*uy} ${back[1]+3*ux}L${tip[0]} ${tip[1]}L${back[0]+3*uy} ${back[1]-3*ux}`);
+  }
+  svg.querySelector('circle').setAttribute('cy',origin[1]);
+}
 function drawHero(time){
   const canvas=$('hero-canvas'),{ctx,w,h,dpr}=canvasSize(canvas);
   const ox=w*.5,oy=h*.68;
-  const project=(x,y)=>[ox+(x-y)*w*.155,oy+(x+y)*h*.11-Math.log1p(.5*(x*x+20*y*y))*h*.20];
+  const basisX=w*.155,basisY=h*.11;
+  const project=(x,y)=>[ox+(x-y)*basisX,oy+(x+y)*basisY-Math.log1p(.5*(x*x+20*y*y))*h*.20];
   const key=`${w}:${h}:${dpr}:${document.documentElement.dataset.theme}`;
   if(heroBackdrop.key!==key){
     heroBackdrop.key=key;heroBackdrop.paths=null;
+    syncHeroCompass(basisX,basisY);
     const palette=getComputedStyle(document.documentElement);
     heroBackdrop.palette=Object.fromEntries(['ink','muted','grid','grid-strong','surface'].map(name=>[name,palette.getPropertyValue('--'+name).trim()]));
     heroBackdrop.meshes=new Map();
