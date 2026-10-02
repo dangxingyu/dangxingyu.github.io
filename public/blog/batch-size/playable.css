@@ -105,3 +105,78 @@ math mi{font-family:inherit}math mtext{font-family:inherit}.formula{font-family:
 @media(min-width:1001px){.directional-comparison .panel-top{min-height:113px}.directional-local-panel .panel-top{justify-content:space-between}}
 .rule-presets button:not(.active),.rule-batch-ticks button,.cnr-presets button{background:transparent}.rule-presets button:not(.active):hover{background:var(--sunken)}
 @media(max-width:760px){.cnr-presets button{min-height:44px}}
+/* Coordinate quantities and line keys stay readable at their actual on-screen size. */
+.figure-axis-heading{display:flex;align-items:start;justify-content:space-between;gap:20px;margin-bottom:8px;color:var(--ink)}.figure-axis-name{display:block;font-size:18px;line-height:1.4;font-weight:600;letter-spacing:-.02em}.figure-axis-name::before{content:'↑';font-size:22px;margin-right:9px;color:var(--orange);font-weight:400}.figure-axis-quantity{display:flex;align-items:center;gap:14px;min-height:52px;margin-top:7px}.figure-axis-quantity math{font-size:26px;line-height:1.6}.figure-axis-unit{font-size:14px;color:var(--muted);font-weight:400}.figure-x-axis{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-size:16px;font-weight:500;line-height:1.6;color:var(--ink);margin:12px 0 24px}.figure-x-axis::after{content:'→';font-size:23px;color:var(--orange);font-weight:400}.figure-x-axis math{font-size:23px}.figure-legend{font-size:14px;line-height:1.6;color:var(--ink);gap:16px 24px;flex-wrap:wrap}.figure-legend>span{display:inline-flex;align-items:center;gap:9px}.figure-legend math{font-size:18px}.figure-legend .trace-swatch{width:34px}.figure-legend .trace-swatch::after{right:1px}.legend-line{display:inline-block;width:34px;border-top:1.5px dashed var(--ink);flex:none}.legend-reference{border-color:var(--muted)}.legend-mark{width:38px;height:14px;display:inline-block;flex:none;color:var(--muted)}.rule-background-swatch{color:var(--muted);opacity:.35}.rule-background-swatch::after{opacity:.7}.rule-atlas-key.figure-legend{color:var(--ink);font-size:14px;gap:18px 28px;margin:0 0 24px}.rule-atlas-heading output{font-size:15px;padding-top:5px}.rule-atlas-heading #rule-view-tabs{margin-top:0;align-self:start}.rule-coverage:empty{display:none}.rule-coverage{margin:-8px 0 25px;max-width:700px;font-size:13px;line-height:1.7}.cnr-chart-label{font-size:13px;min-height:26px;align-items:center;margin:0 0 7px}.cnr-chart-label math{font-size:15px}.cnr-x-label.figure-x-axis{font-size:16px;margin:12px 0 24px}.cnr-x-label.figure-x-axis math{font-size:23px}.cnr-paper-legend.figure-legend{font-size:14px;gap:14px 20px}.directional-local-panel .legend.figure-legend{font-size:14px;gap:14px 20px}.directional-local-panel .legend.figure-legend>span:last-child{font-size:14px;width:auto}.directional-comparison .figure-axis-heading{min-height:90px}.rule-atlas-heading{align-items:start;flex-wrap:wrap}.rule-atlas-heading>div:first-child{flex:1;min-width:240px}.rule-metrics span{font-size:13px}
+.opening-strip{align-items:start;gap:46px;padding-top:40px;padding-bottom:40px}.opening-strip>.small-caps{font-size:12px;white-space:nowrap;padding-top:12px}.opening-questions{flex:1;display:grid;gap:29px}.opening-questions>a{display:grid;grid-template-columns:35px minmax(0,1fr) 24px;column-gap:18px;align-items:start}.opening-questions p{font-family:var(--serif);font-size:27px;line-height:1.4;letter-spacing:-.02em}.question-label{font-size:13px;font-weight:600;color:var(--orange);padding-top:8px}.question-link{font-size:22px;line-height:1.8;color:var(--muted)}.opening-questions a:hover p{color:var(--orange)}
+@media(max-width:760px){.figure-axis-name{font-size:17px}.figure-axis-quantity math{font-size:25px}.figure-x-axis,.cnr-x-label.figure-x-axis{font-size:15px;gap:9px}.figure-axis-unit{font-size:13px}.figure-legend,.cnr-paper-legend.figure-legend,.directional-local-panel .legend.figure-legend{font-size:14px}.figure-axis-heading{gap:14px}.rule-atlas-heading>div:first-child{min-width:0;width:100%}.rule-atlas-heading #rule-view-tabs{margin-top:0}.rule-atlas-key.figure-legend{font-size:14px;gap:13px 20px}.opening-strip{display:block;padding-top:30px;padding-bottom:30px}.opening-strip>.small-caps{display:block;padding:0;margin-bottom:24px}.opening-questions{gap:25px}.opening-questions>a{grid-template-columns:25px minmax(0,1fr) 18px;column-gap:12px}.opening-questions p{font-size:23px}.question-label{font-size:11px;padding-top:7px}.question-link{font-size:18px}}
+
+/* Curve, rule, and measured result share one working view. */
+.rule-workspace{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:28px;align-items:start}
+.rule-chart-pane{position:sticky;top:88px;min-width:0}
+.rule-chart-view{background:var(--surface)}
+.rule-workspace .rule-atlas-heading{flex-wrap:wrap;gap:8px 16px;align-items:start}
+.rule-workspace .rule-atlas-heading>div:first-child{flex:1;min-width:0}
+.rule-workspace .rule-atlas-heading output{order:3;width:100%;font-size:13px;margin-top:0}
+.rule-workspace .figure-axis-quantity{min-height:39px;margin-top:4px}
+.rule-workspace .figure-x-axis{margin:7px 0 12px}
+.rule-workspace .rule-atlas-key{margin:0 0 16px;gap:10px 18px;font-size:13px}
+.rule-workspace .rule-transport{column-gap:16px;margin-bottom:8px}
+.rule-workspace .rule-transport>.button{font-size:11px;padding:10px 12px}
+.rule-workspace .rule-transport>label{font-size:11px;gap:10px}
+.rule-workspace .rule-batch-ticks{padding-left:78px;margin-top:0}
+.rule-workspace .rule-presets{padding:14px 0 0;border-bottom:0;gap:6px}
+.rule-workspace .rule-presets button{font-size:11px;padding:7px 9px;min-height:36px}
+.rule-workspace .rule-inspector{display:block;padding:0 0 0 24px;border-left:1px solid var(--line);min-width:0}
+.rule-workspace .rule-inspector h4{font-size:18px;margin:0 0 16px}
+.rule-workspace .rule-builder{display:flex;flex-direction:column;gap:7px}
+.rule-workspace .rule-builder label{display:grid;grid-template-columns:minmax(0,1fr) 122px;gap:10px;align-items:center;font-size:12px}
+.rule-workspace .rule-builder label>span{min-height:0;color:var(--ink)}
+.rule-workspace .rule-builder math{font-size:19px}
+.rule-workspace .rule-builder select{min-height:36px;padding:6px 8px;font-size:12px}
+.rule-workspace .rule-recipe{font-size:14px;gap:4px 14px;margin:17px 0 18px}
+.rule-workspace .rule-recipe math{font-size:16px}
+.rule-workspace .rule-recipe>small{overflow-wrap:anywhere}
+.rule-workspace .rule-recipe>small math{font-size:13px}
+.rule-workspace .rule-metrics{display:block;border-left:0;border-top:1px solid var(--line);padding:16px 0 0}
+.rule-workspace .rule-metrics>div{display:flex;margin-bottom:9px;gap:14px}
+.rule-workspace .rule-metrics span{font-size:12px;line-height:1.5}
+.rule-workspace .rule-metrics strong{display:inline;font-size:20px;white-space:nowrap;margin:0}
+.rule-workspace .rule-metrics p{font-size:11px;line-height:1.7;margin-top:13px}
+.rule-lab>details{margin-top:28px}
+@media(max-width:1000px){
+ .rule-workspace{display:block}
+ .rule-chart-pane{display:contents}
+ .rule-chart-view{position:sticky;top:72px;z-index:3;padding-top:8px;box-shadow:0 12px 16px -16px var(--ink);border-bottom:1px solid var(--line)}
+ .rule-workspace .rule-atlas-heading{flex-direction:row;margin-bottom:0}
+ .rule-workspace .rule-atlas-heading .segmented{margin:0;align-self:start;flex:none}
+ .rule-workspace .rule-atlas-heading .segmented button{padding:8px;font-size:10px}
+ .rule-workspace .rule-atlas-heading output{display:none}
+ .rule-workspace .figure-axis-name{font-size:15px}
+ .rule-workspace .figure-axis-name::before{font-size:18px;margin-right:5px}
+ .rule-workspace .figure-axis-quantity{min-height:30px;margin-top:1px;gap:9px}
+ .rule-workspace .figure-axis-quantity math{font-size:20px}
+ .rule-workspace .figure-axis-unit{font-size:12px}
+ .rule-workspace .figure-x-axis{font-size:13px;margin:0 0 8px;gap:8px}
+ .rule-workspace .figure-x-axis math{font-size:18px}
+ .rule-workspace .rule-atlas-key{font-size:11px;gap:7px 12px;margin-bottom:8px}
+ .rule-workspace .rule-atlas-key .trace-swatch{width:23px}
+ .rule-workspace .rule-transport{grid-template-columns:auto 1fr;gap:12px 15px;margin:18px 0 0}
+ .rule-workspace .rule-batch-ticks{grid-column:2;margin-top:-12px;padding-left:78px}
+ .rule-workspace .rule-presets{padding:10px 0 18px}
+ .rule-workspace .rule-inspector{border-left:0;border-top:1px solid var(--line);padding:22px 0 0}
+ .rule-workspace .rule-builder{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .rule-workspace .rule-builder label{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+ .rule-workspace .rule-builder label>span{min-height:32px;font-size:11px}
+ .rule-workspace .rule-builder select{min-height:40px}
+ .rule-workspace .rule-metrics{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+ .rule-workspace .rule-metrics>div{display:block;margin:0}
+ .rule-workspace .rule-metrics strong{display:block;margin-top:5px}
+ .rule-workspace .rule-metrics p{grid-column:1/-1;margin:0}
+}
+@media(max-width:400px){
+ .rule-workspace .rule-atlas-heading .segmented{width:100%;margin:2px 0 8px}
+ .rule-workspace .rule-atlas-heading .segmented button{flex:1}
+ .rule-workspace .rule-transport{grid-template-columns:1fr}
+ .rule-workspace .rule-transport>.button{justify-self:start}
+ .rule-workspace .rule-batch-ticks{grid-column:1;padding-left:78px}
+}

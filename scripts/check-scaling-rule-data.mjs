@@ -22,6 +22,15 @@ for(const [key,s] of Object.entries(data.settings)){
   }
   s.batches.forEach((_,i)=>{const min=Math.min(...s.rules.map(r=>r.losses[i]));assert.equal(min,s.gridMinimum[i]);assert.equal(s.rules.find(r=>r.id===s.bestAtBatch[i]).losses[i],min);});
   assert.equal(s.commonRuleId,s.rules[0].id);
+  assert.equal(s.retunedBaseline.length,s.batches.length);
+  assert.equal(s.retunedBaseline.filter(Boolean).length,4);
+  for(const baseline of s.retunedBaseline.filter(Boolean)){
+    assert(Number.isFinite(baseline.loss));
+    if(baseline.seedLosses){
+      const losses=Object.values(baseline.seedLosses).sort((a,b)=>a-b);
+      assert.equal(baseline.n,3);assert.equal(baseline.loss,losses[1]);
+    }
+  }
   assert(s.rules.every(r=>r.meanRegret>=s.rules[0].meanRegret-1e-12));
   assert(s.rules.find(r=>r.id===s.noScalingRuleId).choices && s.coords.every(c=>s.rules.find(r=>r.id===s.noScalingRuleId).choices[c.key]==='fixed'));
   for(const [etaM,mu] of [['sqrt','fixed'],['linear','retention']])assert(s.rules.some(r=>r.choices.etaM===etaM&&r.choices.lambdaM==='fixed'&&r.choices.mu===mu));
@@ -31,7 +40,13 @@ assert.deepEqual(data.settings.llm.rules[0].losses,[3.26969,3.28192,3.31183,3.37
 assert.equal(data.settings.llm.rules[0].meanRegret,.00151);
 assert.equal(data.settings.cifar.rules[0].choices.etaM,'sqrt');
 assert.equal(data.settings.cifar.seed,42);
+assert.deepEqual(data.settings.llm.retunedBaseline.map(p=>p.loss),[3.26553,3.27735,3.310845,3.36592]);
+assert.equal(data.settings.llm.retunedBaseline[0].kind,'grid_proxy');
+assert.deepEqual(data.settings.cifar.retunedBaseline.slice(0,2),[null,null]);
+assert(data.settings.cifar.rules[0].losses[3]-data.settings.cifar.retunedBaseline[3].loss<0,'Measured single-seed losses below the retuned median must remain negative gaps');
+assert(Math.abs(data.settings.llm.rules[0].losses.reduce((sum,v,i)=>sum+v-data.settings.llm.retunedBaseline[i].loss,0)/4-.00589125)<1e-12);
 console.log('PASS: all 4,752 scaling-rule endpoints, complete 216/648 Cartesian grids, regret selection and identical JS/JSON downloads.');
+console.log('PASS: paper retuning baselines, exact three-seed medians, explicit missing CIFAR 64/128 references, and signed comparison gaps.');
 const cnr=JSON.parse(readFileSync(new URL('signsgd-cnr.json',root),'utf8'));
 const cnrContext={window:{}};vm.runInNewContext(readFileSync(new URL('signsgd-cnr.js',root),'utf8'),cnrContext);
 assert.deepEqual(JSON.parse(JSON.stringify(cnrContext.window.SIGNSGD_CNR_DATA)),cnr);

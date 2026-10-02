@@ -10,7 +10,7 @@ must remain explicitly distinguished.
 
 ## Evidence and typography
 
-Six large editorial claims summarize the actual results and mechanism. Source
+The opening questions are copied verbatim from the paper’s active introduction. Main prose uses selected and lightly edited paper expressions; numerical-illustration qualifications and interactive controls remain explicit. Six large editorial claims summarize the actual results and mechanism. Source
 revision 462dc51 is retained; an Overleaf refresh returned HTTP 503 during this
 edit, so a newer revision could not be confirmed.
 
@@ -27,7 +27,7 @@ landscape. Series legends use a line and endpoint matching their plotted marks.
 216 × 4 = 864 language-model runs (seed 1) and 648 × 6 = 3,888 CIFAR-5M runs
 (seed 42). The sources and hashes are in that dataset and `provenance.json`.
 CIFAR uses the final-ten-evaluation mean, not final loss or seed uncertainty.
-These grids exclude full-retuning medians and partial auxiliary-decay extensions.
+The original run count excludes retuning references and partial auxiliary-decay extensions. Full-retuning baseline points are now kept in `retunedBaseline`, separately from the original rules.
 
 The rule fan chart retains every curve and every measured point, with faint
 background marks and an emphasized selected rule. Click chooses the nearest
@@ -35,7 +35,7 @@ polyline; arrow keys traverse rules ranked by mean gap. The builder resolves all
 coordinate combinations to actual rules. A smooth cursor plays tested batch
 changes; motion between endpoints is visual interpolation, not training history.
 Hidden/offscreen pages suspend playback; reduced motion advances discretely.
-The y transform is `log(1 + gap/0.001)` with numeric gap ticks. Common selection
+The default y axis is the signed gap to the paper full-retuning baseline, transformed by `sign(gap) log(1 + |gap|/0.001)`. Negative gaps remain visible. LM 256K uses the paper’s best-grid proxy; its 512K–2M points are retuned medians. CIFAR has three-seed retuned medians only at 512–4096, so the gap view shows these four batches. The Validation loss view retains every original point, including 64/128, with no fabricated baseline. The inspector’s mean gap uses only available retuning baselines. Overall ranks and common-rule selection still use the original all-target grid regret. Axis names and quantities use 17–26px type, SVG ticks render at 16px, and legend swatches match each plotted line. Common selection
 minimizes equally weighted regret across all target batches, including CIFAR's
 64/128-image targets. This differs from the winner at any one batch. The bound
 and SDE presets use the best completion of their matrix prescription within each
@@ -73,7 +73,7 @@ protocol, endpoint fields and hashes are included in the downloadable dataset.
 - The held-rank lens uses measured ranks only. Arrow keys move between available
   ranks and focus survives a chart redraw. Missing branches remain “Not run.”
 - The hero caches projected trajectories and vector meshes at each drawing scale.
-  Playback takes 1.6–4.2 seconds according to the number of updates; large batches
+  Playback takes 11.2–24 seconds according to the number of updates; large batches
   smoothly interpolate between actual optimizer states. This is a visual tween,
   not an additional optimizer update. Its camera follows the recent paths, keeps
   the full accumulated trace as cached vectors, and
@@ -146,3 +146,5 @@ Temporary fixtures must be removed before building or publishing.
 Run Lighthouse against the final page. A successful build alone does not establish
 readable labels, scientific correctness, or correct interactive behavior. After an
 authorized push, verify the GitHub Pages run and the deployed article and assets.
+
+The scaling-rule workspace places the curve atlas beside the complete rule builder and loss readouts on desktop. Selecting a curve synchronizes every coordinate; changing a coordinate immediately highlights its measured rule. On screens at or below 1000px, the compact chart stays visible while the builder and results scroll underneath. Narrow raw-loss plots retain all endpoints but label only a subset of batch ticks to prevent overlap. Repeated figure-category labels have been removed.

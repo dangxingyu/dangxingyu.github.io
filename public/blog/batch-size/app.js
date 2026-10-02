@@ -18,6 +18,15 @@ function chartFrame(id,width,height,margins){
   chart.setAttribute('viewBox',`0 0 ${w} ${height}`);
   return frame(w,height,margins);
 }
+function researchFrame(id,width,height,margins={l:58,r:22,t:20,b:43}){
+  const chart=$(id),w=Math.max(240,Math.min(width,chart.clientWidth));
+  chart.setAttribute('viewBox',`0 0 ${w} ${height}`);
+  return frame(w,height,margins);
+}
+function researchAxes(f){
+  const bottom=f.h-f.b,right=f.w-f.r;
+  return `<g class="research-axis" fill="none" stroke="${token('--ink')}" stroke-width="1.2" opacity=".7"><path d="M${f.l} ${f.t-7}V${bottom}H${right+7}"/><path d="M${f.l-4} ${f.t-1}L${f.l} ${f.t-7}L${f.l+4} ${f.t-1}M${right+1} ${bottom-4}L${right+7} ${bottom}L${right+1} ${bottom+4}"/></g>`;
+}
 function axes(f, ymin,ymax, xticks, xmap, options={}) {
   const y=v=>f.t+f.ih*(1-(v-ymin)/(ymax-ymin)); let s='';
   for(let i=0;i<=4;i++){const v=ymin+(ymax-ymin)*i/4,yp=y(v);s+=`<line x1="${f.l}" x2="${f.w-f.r}" y1="${yp}" y2="${yp}" stroke="${options.dark?'#3d5355':'#e7ebe2'}" stroke-width="1"/>`+svgText(f.l-9,yp+3,options.format?options.format(v):v.toFixed(2),`${tickStyle} text-anchor="end"`);}
@@ -72,7 +81,7 @@ function configureHero(){
   hero.batch=2**+$('hero-batch').value;
   hero.tuned=tunedMethods(hero);hero.paths={};
   ['sgd','newton'].forEach(m=>{hero.paths[m]=NQM.trajectory(hero,m,hero.tuned[m].eta,7);});
-  hero.duration=Math.min(4200,1400+240*Math.log2(1+NQM.T/hero.batch));
+  hero.duration=Math.min(24000,10000+1200*Math.log2(1+NQM.T/hero.batch));
   $('hero-batch-output').textContent=fmt(hero.batch);
   $('hero-batch').setAttribute('aria-valuetext',`${hero.batch} samples per batch`);
   $('hero-winner').textContent=(hero.tuned.sgd.total<hero.tuned.newton.total?'SGD':'Newton')+' leads in expectation';
@@ -387,14 +396,14 @@ $('landscape').addEventListener('keydown',e=>{const d={ArrowLeft:[-.1,0],ArrowRi
 function drawScaling(){
   const alpha=+$('scale-alpha').value,ratio=2**+$('scale-batch').value;
   $('scale-alpha-output').textContent=alpha.toFixed(2);$('scale-batch-output').textContent=ratio+'×';
-  const f=chartFrame('scaling-chart',640,310),x=r=>f.l+Math.log2(r)/6*f.iw;
+  const f=researchFrame('scaling-chart',640,340),x=r=>f.l+Math.log2(r)/6*f.iw;
   const cnrs=[1,.001],vals=cnrs.map(c=>Array.from({length:121},(_,i)=>({r:2**(i/20),v:NQM.displacement(c,2**(i/20),alpha)})));
   const ymax=Math.max(1.3,...vals.flat().map(p=>p.v))*1.08;
-  const a=axes(f,0,ymax,[[1,'1×'],[4,'4×'],[16,'16×'],[64,'64× batch']],x,{format:v=>v.toFixed(1)+'×'});let s=a.svg;
+  const a=axes(f,0,ymax,[[1,'1'],[4,'4'],[16,'16'],[64,'64']],x,{format:v=>v.toFixed(1)+'×'});let s=a.svg.replaceAll('font-size="12"','font-size="16"');
   s+=`<line x1="${f.l}" x2="${f.w-f.r}" y1="${a.y(1)}" y2="${a.y(1)}" stroke="#81937c" stroke-dasharray="4 4"/>`;
   s+=`<line x1="${x(ratio)}" x2="${x(ratio)}" y1="${f.t}" y2="${f.t+f.ih}" stroke="#9bab9a" stroke-dasharray="2 4"/>`;
   vals.forEach((pts,i)=>{const color=i?colors.newton:colors.sgd;s+=`<path d="${line(pts,p=>x(p.r),p=>a.y(p.v))}" fill="none" stroke="${color}" stroke-width="2.7"/><circle cx="${x(ratio)}" cy="${a.y(NQM.displacement(cnrs[i],ratio,alpha))}" r="5" fill="${color}" stroke="#fffefa" stroke-width="2"/>`;});
-  s+=svgText(f.l,12,'Expected movement per sample / reference',`${tickStyle}`);$('scaling-chart').innerHTML=s;
+  s+=researchAxes(f);$('scaling-chart').innerHTML=s;
   $('movement-readout').innerHTML=cnrs.map((c,i)=>{const v=NQM.displacement(c,ratio,alpha);return `<div class="movement-value"><span>${i?'Low':'High'} CNR</span><strong>${v.toFixed(2)}×</strong><small>${Math.abs(v-1)<.02?'Almost preserved':v<1?'Less movement / sample':'More movement / sample'}</small></div>`;}).join('');
   dispatchEvent(new Event('batchsize:scaling'));
   document.querySelectorAll('#scale-presets button').forEach(b=>{b.classList.toggle('active',+b.dataset.alpha===alpha);b.setAttribute('aria-pressed',String(+b.dataset.alpha===alpha));});

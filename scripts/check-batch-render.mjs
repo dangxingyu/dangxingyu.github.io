@@ -169,7 +169,8 @@ for(const exponent of [0,8,12,8,0]){
   assert.equal(nodes['hero-canvas'].dataset.progress,'1.000');
   const paths=vm.runInContext('heroBackdrop.history',context);
   for(const method of ['sgd','newton'])assert.equal(paths[method].points.length,state.length,'The hero retains its full trace.');
-  if(exponent===12)assert.equal(state.duration,1640,'A one-update run does not wait for the old fixed duration.');
+  assert(state.duration>=11000&&state.duration<=24000,'The cover provides a longer, bounded viewing interval.');
+  if(exponent===12)assert.equal(state.duration,11200,'Even a one-update run gives the camera time to unfold.');
 }
 vm.runInContext('reducedMotion.matches=true;heroPaused=true;configureHero()',context);
 assert.equal(nodes['hero-canvas'].dataset.progress,'1.000');
