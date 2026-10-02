@@ -9,6 +9,11 @@ const svgText = (x,y,text,extra='') => `<text x="${x}" y="${y}" ${extra}>${text}
 const tickStyle = 'font-size="12"';
 const token = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 function frame(w,h,margins={l:48,r:20,t:25,b:38}) { return {w,h,...margins,iw:w-margins.l-margins.r,ih:h-margins.t-margins.b}; }
+function chartFrame(id,width,height,margins){
+  const chart=$(id),w=Math.max(360,Math.min(width,chart.clientWidth));
+  chart.setAttribute('viewBox',`0 0 ${w} ${height}`);
+  return frame(w,height,margins);
+}
 function axes(f, ymin,ymax, xticks, xmap, options={}) {
   const y=v=>f.t+f.ih*(1-(v-ymin)/(ymax-ymin)); let s='';
   for(let i=0;i<=4;i++){const v=ymin+(ymax-ymin)*i/4,yp=y(v);s+=`<line x1="${f.l}" x2="${f.w-f.r}" y1="${yp}" y2="${yp}" stroke="${options.dark?'#3d5355':'#e7ebe2'}" stroke-width="1"/>`+svgText(f.l-9,yp+3,options.format?options.format(v):v.toFixed(2),`${tickStyle} text-anchor="end"`);}
@@ -18,10 +23,11 @@ function axes(f, ymin,ymax, xticks, xmap, options={}) {
 const rankState={family:'standard_wd',index:0,matrix:true};
 const rankBatches=[131072,524288,1048576,2097152];
 function drawRankings(){
+  const oldRanks=new Map([...document.querySelectorAll('.rank-row')].map(row=>[row.dataset.optimizer,row.getBoundingClientRect().top]));
   const {family,index,matrix}=rankState, selected=rankBatches[index];
   const all=DATA.rankings.filter(r=>r.family===family), names=matrix?['SOAP','Muon','Shampoo']:['SOAP','Muon','Shampoo','Adam','Lion'];
   const rows=all.filter(r=>names.includes(r.optimizer));
-  const f=frame(650,310),x=b=>f.l+Math.log2(b/131072)/4*f.iw;
+  const f=chartFrame('ranking-chart',650,310),x=b=>f.l+Math.log2(b/131072)/4*f.iw;
   const ymin=3.24, ymax=matrix?3.40:3.59;
   const a=axes(f,ymin,ymax,rankBatches.map(b=>[b,batchName(b)]),x);let s=a.svg;
   s+=`<rect x="${x(selected)-15}" y="${f.t-7}" width="30" height="${f.ih+7}" fill="#c6d5c0" opacity=".2" rx="6"/><line x1="${x(selected)}" x2="${x(selected)}" y1="${f.t}" y2="${f.t+f.ih}" stroke="#859585" stroke-dasharray="3 4"/>`;
@@ -29,9 +35,11 @@ function drawRankings(){
   $('ranking-chart').innerHTML=`<title id="ranking-chart-title">Measured validation losses under ${family==='standard_wd'?'weight decay':'HyperBall'}; ${batchName(selected)} selected</title>${s}`;
   $('rank-legend').innerHTML=names.map(n=>`<span><i class="dot" style="background:${colors[n]}"></i>${n}</span>`).join('');
   const sorted=all.filter(r=>r.batch===selected).sort((a,b)=>a.loss-b.loss);
-  $('rank-list').innerHTML=sorted.map((r,i)=>`<div class="rank-row ${i===0?'first':''}"><span class="rank-name"><span class="rank-number">${i+1}</span><i class="dot" style="background:${colors[r.optimizer]}"></i>${r.optimizer}</span><span class="rank-value">${r.loss.toFixed(4)} <small>n=${r.n}</small></span></div>`).join('');
+  $('rank-list').innerHTML=sorted.map((r,i)=>`<div data-optimizer="${r.optimizer}" class="rank-row ${i===0?'first':''}"><span class="rank-name"><span class="rank-number">${i+1}</span><i class="dot" style="background:${colors[r.optimizer]}"></i>${r.optimizer}</span><span class="rank-value">${r.loss.toFixed(4)} <small>n=${r.n}</small></span></div>`).join('');
+  if(!reducedMotion.matches)document.querySelectorAll('.rank-row').forEach(row=>{const previous=oldRanks.get(row.dataset.optimizer);if(previous!==undefined){const dy=previous-row.getBoundingClientRect().top;if(dy)row.animate([{transform:`translateY(${dy}px)`},{transform:'translateY(0)'}],{duration:350,easing:'cubic-bezier(.22,1,.36,1)'});}});
   const gap=sorted[1].loss-sorted[0].loss;
   $('ranking-insight').innerHTML=`<strong>${sorted[0].optimizer} leads by ${gap.toFixed(4)} nats</strong> over ${sorted[1].optimizer}.${gap<.002?' This is a close comparison, below the 0.002-nat tuning acceptance threshold.':''} ${fmt(sorted[0].steps)} updates at this batch size.`;
+  dispatchEvent(new Event('batchsize:rankings'));
   $('ranking-caveat').textContent=family==='standard_wd'?'Points: reported medians; whiskers: observed min-max, not confidence intervals. Lines guide the eye. SOAP denotes the KL-SOAP implementation.':'HyperBall points mostly have one run; they do not establish statistical significance. SOAP denotes KL-SOAP. Lines guide the eye.';
   $('board-batch').textContent=batchName(selected);$('rank-batch-output').textContent=batchName(selected)+' tokens';
   document.querySelectorAll('#rank-ticks button').forEach(b=>{b.classList.toggle('active',+b.dataset.index===index);b.setAttribute('aria-pressed',String(+b.dataset.index===index));});
@@ -41,9 +49,10 @@ document.querySelectorAll('#rank-ticks button').forEach(b=>b.addEventListener('c
 document.querySelectorAll('#family-tabs button').forEach(b=>b.addEventListener('click',()=>{rankState.family=b.dataset.family;document.querySelectorAll('#family-tabs button').forEach(btn=>{btn.classList.toggle('active',btn===b);btn.setAttribute('aria-pressed',String(btn===b));});drawRankings();}));
 $('matrix-only').addEventListener('change',e=>{rankState.matrix=e.target.checked;drawRankings();});
 
-function canvasSize(canvas){const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);if(canvas.width!==Math.round(rect.width*dpr)||canvas.height!==Math.round(rect.height*dpr)){canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);}const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:rect.width,h:rect.height};}
+function canvasSize(canvas){const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);if(canvas.width!==Math.round(rect.width*dpr)||canvas.height!==Math.round(rect.height*dpr)){canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);}const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:rect.width,h:rect.height,dpr};}
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
-let heroPaused=reducedMotion.matches,heroTime=0,heroVisible=true,lastHero=0;
+let heroPaused=reducedMotion.matches,heroTime=heroPaused?5800:0,heroVisible=true,lastHero=0,heroRAF=0;
+const heroBackdrop={canvas:document.createElement('canvas'),key:''};
 const hero={batch:256,sharp:20,noise:8,start:[1,1],paths:{},tuned:{}};
 function configureHero(){
   hero.batch=2**+$('hero-batch').value;
@@ -51,19 +60,31 @@ function configureHero(){
   $('hero-batch-output').textContent=fmt(hero.batch);
   $('hero-batch').setAttribute('aria-valuetext',`${hero.batch} samples per batch`);
   $('hero-winner').textContent=(hero.tuned.sgd.total<hero.tuned.newton.total?'SGD':'Newton')+' leads in expectation';
-  heroTime=0;drawHero(0);
+  heroTime=heroPaused?5800:0;drawHero(heroTime);
 }
 function drawHero(time){
-  const {ctx,w,h}=canvasSize($('hero-canvas'));ctx.clearRect(0,0,w,h);
+  const {ctx,w,h,dpr}=canvasSize($('hero-canvas'));ctx.clearRect(0,0,w,h);
   const project=(x,y)=>[w*.50+(x-y)*w*.155,h*.79+(x+y)*h*.11-Math.log1p(.5*(x*x+20*y*y))*h*.20];
   const path=(points,color,width=1)=>{ctx.beginPath();points.forEach((p,i)=>{const [x,y]=project(...p);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.stroke();};
-  for(let k=-12;k<=12;k++){
-    const y=k/10;path(Array.from({length:65},(_,i)=>[-2+i/16,y]),token(k%3===0?'--grid-strong':'--grid'),k%3===0?.9:.6);
+  const backdropKey=`${w}:${h}:${dpr}:${document.documentElement.dataset.theme}`;
+  if(heroBackdrop.key!==backdropKey){
+    heroBackdrop.key=backdropKey;
+    const canvas=heroBackdrop.canvas;canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+    const bg=canvas.getContext('2d');bg.setTransform(dpr,0,0,dpr,0,0);
+    const palette=getComputedStyle(document.documentElement),grid=palette.getPropertyValue('--grid').trim(),strong=palette.getPropertyValue('--grid-strong').trim();
+    const mesh=points=>{bg.beginPath();points.forEach((p,i)=>{const [x,y]=project(...p);i?bg.lineTo(x,y):bg.moveTo(x,y)});bg.stroke();};
+    for(let k=-12;k<=12;k++){
+      bg.strokeStyle=k%3===0?strong:grid;bg.lineWidth=k%3===0?.9:.6;
+      mesh(Array.from({length:65},(_,i)=>[-2+i/16,k/10]));
+      mesh(Array.from({length:49},(_,i)=>[k/6,-1.2+i/20]));
+    }
+    bg.font='11px "Essay Sans",sans-serif';bg.fillStyle=palette.getPropertyValue('--muted').trim();
+    const origin=project(0,0);bg.beginPath();bg.arc(...origin,2.5,0,Math.PI*2);bg.fill();bg.fillText('minimum',origin[0]+10,origin[1]+18);
+    const start=project(1,1);bg.beginPath();bg.arc(...start,4,0,Math.PI*2);bg.strokeStyle=palette.getPropertyValue('--ink').trim();bg.lineWidth=1;bg.stroke();bg.fillText('same start',start[0]+11,start[1]-9);
+    bg.fillText('flat + noisy',w*.13,h*.90);bg.fillText('sharp + noiseless',w*.59,h*.11);
   }
-  for(let k=-12;k<=12;k++){
-    const x=k/6;path(Array.from({length:49},(_,i)=>[x,-1.2+i/20]),token(k%3===0?'--grid-strong':'--grid'),k%3===0?.9:.6);
-  }
-  const phase=(time%8000)/5800,progress=heroPaused?1:Math.min(1,phase);
+  ctx.drawImage(heroBackdrop.canvas,0,0,w,h);
+  const phase=(time%8000)/5800,progress=Math.min(1,phase);
   ['sgd','newton'].forEach(method=>{
     const all=hero.paths[method];if(!all)return;
     const count=Math.max(1,Math.floor(progress*(all.length-1))),stride=Math.max(1,Math.floor(count/350));
@@ -72,28 +93,34 @@ function drawHero(time){
     ctx.beginPath();ctx.arc(...point,5,0,Math.PI*2);ctx.fillStyle=colors[method];ctx.fill();
     ctx.beginPath();ctx.arc(...point,9,0,Math.PI*2);ctx.strokeStyle=colors[method];ctx.globalAlpha=.3;ctx.lineWidth=1;ctx.stroke();ctx.globalAlpha=1;
   });
-  ctx.font='11px "Essay Sans",sans-serif';ctx.fillStyle=token('--muted');
-  const origin=project(0,0);ctx.beginPath();ctx.arc(...origin,2.5,0,Math.PI*2);ctx.fill();ctx.fillText('minimum',origin[0]+10,origin[1]+18);
-  const start=project(1,1);ctx.beginPath();ctx.arc(...start,4,0,Math.PI*2);ctx.strokeStyle=token('--ink');ctx.lineWidth=1;ctx.stroke();ctx.fillText('same start',start[0]+11,start[1]-9);
-  ctx.fillText('flat + noisy',w*.13,h*.90);ctx.fillText('sharp + noiseless',w*.59,h*.11);
 }
-function heroLoop(ts){if(lastHero&&heroVisible&&!heroPaused&&!document.hidden)heroTime+=Math.min(ts-lastHero,50);lastHero=ts;if(heroVisible)drawHero(heroTime);if(!heroPaused)requestAnimationFrame(heroLoop);}
+function heroLoop(ts){heroRAF=0;if(heroPaused||!heroVisible||document.hidden)return;if(lastHero)heroTime+=Math.min(ts-lastHero,50);lastHero=ts;drawHero(heroTime);heroRAF=requestAnimationFrame(heroLoop);}
+function syncHeroPlayback(){
+  const running=!heroPaused&&heroVisible&&!document.hidden;$('hero-canvas').dataset.animating=String(running);
+  if(!running){cancelAnimationFrame(heroRAF);heroRAF=0;lastHero=0;}
+  else if(!heroRAF){lastHero=0;heroRAF=requestAnimationFrame(heroLoop);}
+}
 function updateHeroMotion(){ $('hero-motion').textContent=heroPaused?'Play':'Pause';$('hero-motion').setAttribute('aria-label',heroPaused?'Play landscape animation':'Pause landscape animation'); }
-$('hero-motion').addEventListener('click',()=>{heroPaused=!heroPaused;updateHeroMotion();lastHero=0;drawHero(heroTime);if(!heroPaused)requestAnimationFrame(heroLoop);});
+$('hero-motion').addEventListener('click',()=>{heroPaused=!heroPaused;updateHeroMotion();syncHeroPlayback();drawHero(heroTime);});
 $('hero-batch').addEventListener('input',configureHero);
-new IntersectionObserver(entries=>{heroVisible=entries[0].isIntersecting;},{threshold:0}).observe($('hero-canvas'));
-reducedMotion.addEventListener('change',e=>{if(e.matches){heroPaused=true;updateHeroMotion();drawHero(heroTime);}});
+new IntersectionObserver(entries=>{heroVisible=entries[0].isIntersecting;syncHeroPlayback();},{threshold:0}).observe($('hero-canvas'));
+reducedMotion.addEventListener('change',e=>{if(e.matches){heroPaused=true;heroTime=5800;updateHeroMotion();syncHeroPlayback();drawHero(heroTime);}});
+document.fonts.ready.then(()=>{heroBackdrop.key='';drawHero(heroTime);});
 
 const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,progress:0,playing:false,paths:{},tuned:{},last:0};
-let simRAF=0;
+let simRAF=0,simVisible=true;
 function configureSimulation(){
   sim.batch=2**+$('sim-batch').value;sim.sharp=+$('sim-sharp').value;sim.noise=+$('sim-noise').value;sim.progress=0;sim.playing=false;sim.last=0;cancelAnimationFrame(simRAF);
   ['sgd','newton'].forEach(m=>{sim.tuned[m]=NQM.tune(sim,m);sim.paths[m]=NQM.trajectory(sim,m,sim.tuned[m].eta,sim.seed);});
+  const maxLoss=Math.max(.5*(sim.start[0]**2+sim.sharp*sim.start[1]**2),...Object.values(sim.paths).map(ps=>Math.max(...ps.map(p=>p.loss))),1e-2);
+  sim.lossBounds={ymax:Math.ceil(Math.log10(maxLoss)),ymin:Math.min(-4,Math.floor(Math.log10(Math.max(Math.min(sim.tuned.sgd.total,sim.tuned.newton.total),1e-6)))-1)};
+  syncSimPlayback();
   $('sim-batch-output').textContent=fmt(sim.batch);$('sim-sharp-output').textContent=sim.sharp+'×';$('sim-noise-output').textContent=sim.noise;$('sim-updates').textContent=fmt(NQM.T/sim.batch);$('sim-seed').textContent='SEED '+sim.seed;
   $('sim-batch').setAttribute('aria-valuetext',`${sim.batch} samples per batch; ${NQM.T/sim.batch} updates`);
   $('preset-small').classList.toggle('active',sim.batch===1);$('preset-large').classList.toggle('active',sim.batch===256);
   for(const [id,b] of [['preset-small',1],['preset-large',256]])$(id).setAttribute('aria-pressed',String(sim.batch===b));
   renderRisk();renderSim();
+  dispatchEvent(new Event('batchsize:simulation'));
 }
 function renderRisk(){
   const max=Math.max(sim.tuned.sgd.total,sim.tuned.newton.total,1e-15);
@@ -115,16 +142,22 @@ function renderLandscape(){
   return {scale,cx,cy};
 }
 function renderLoss(){
-  const f=frame(480,170,{l:43,r:12,t:12,b:28}),x=s=>f.l+s/NQM.T*f.iw;
-  const maxLoss=Math.max(.5*(sim.start[0]**2+sim.sharp*sim.start[1]**2),...Object.values(sim.paths).map(ps=>Math.max(...ps.map(p=>p.loss))),1e-2);
-  const ymax=Math.ceil(Math.log10(maxLoss)),ymin=Math.min(-4,Math.floor(Math.log10(Math.max(Math.min(sim.tuned.sgd.total,sim.tuned.newton.total),1e-6)))-1);
+  const f=chartFrame('sim-loss',480,170,{l:43,r:12,t:12,b:28}),x=s=>f.l+s/NQM.T*f.iw;
+  const {ymax,ymin}=sim.lossBounds;
   const a=axes(f,ymin,ymax,[[0,'0'],[2048,'2,048'],[4096,'4,096 samples']],x,{dark:true,format:v=>(10**v).toExponential(0)});
   let s=a.svg;['sgd','newton'].forEach(m=>{const pts=sim.paths[m].filter((p,i)=>i<=Math.floor(sim.progress*(sim.paths[m].length-1)));const stride=Math.max(1,Math.floor(pts.length/350));const sampled=pts.filter((p,i)=>i%stride===0||i===pts.length-1);s+=`<path d="${line(sampled,p=>x(p.samples),p=>a.y(Math.max(ymin,Math.log10(Math.max(p.loss,1e-15)))))}" fill="none" stroke="${colors[m]}" stroke-width="1.6"/>`;});
   $('sim-loss').innerHTML=s;
 }
 function renderSim(){renderLandscape();renderLoss();const samples=Math.floor(sim.progress*NQM.T/sim.batch)*sim.batch;$('sim-progress').textContent=`${fmt(samples)} / 4,096 samples`;$('sim-progress-bar').style.width=(sim.progress*100)+'%';$('sim-play').innerHTML=sim.playing?'Ⅱ Pause':sim.progress>=1?'↻ Replay':'▶ Run experiment';}
-function tickSim(ts){if(!sim.playing)return;if(sim.last&&!document.hidden)sim.progress=Math.min(1,sim.progress+Math.min(ts-sim.last,60)/5500);sim.last=ts;if(sim.progress>=1)sim.playing=false;renderSim();if(sim.playing)simRAF=requestAnimationFrame(tickSim);}
-$('sim-play').addEventListener('click',()=>{sim.playing=!sim.playing;if(sim.progress>=1)sim.progress=0;sim.last=0;cancelAnimationFrame(simRAF);renderSim();if(sim.playing)simRAF=requestAnimationFrame(tickSim);});
+function tickSim(ts){simRAF=0;if(!sim.playing||!simVisible||document.hidden)return;if(sim.last)sim.progress=Math.min(1,sim.progress+Math.min(ts-sim.last,60)/5500);sim.last=ts;if(sim.progress>=1)sim.playing=false;renderSim();if(sim.playing)simRAF=requestAnimationFrame(tickSim);else syncSimPlayback();}
+function syncSimPlayback(){
+  const running=sim.playing&&simVisible&&!document.hidden;$('landscape').dataset.animating=String(running);
+  if(!running){cancelAnimationFrame(simRAF);simRAF=0;sim.last=0;}
+  else if(!simRAF){sim.last=0;simRAF=requestAnimationFrame(tickSim);}
+}
+$('sim-play').addEventListener('click',()=>{sim.playing=!sim.playing;if(sim.progress>=1)sim.progress=0;renderSim();syncSimPlayback();});
+new IntersectionObserver(entries=>{simVisible=entries[0].isIntersecting;syncSimPlayback();},{threshold:0}).observe($('landscape').closest('.sandbox'));
+document.addEventListener('visibilitychange',()=>{syncHeroPlayback();syncSimPlayback();});
 $('sim-reset').addEventListener('click',configureSimulation);
 $('sim-reseed').addEventListener('click',()=>{sim.seed++;configureSimulation();});
 ['sim-batch','sim-sharp','sim-noise'].forEach(id=>$(id).addEventListener('input',configureSimulation));
@@ -136,7 +169,7 @@ $('landscape').addEventListener('keydown',e=>{const d={ArrowLeft:[-.1,0],ArrowRi
 function drawScaling(){
   const alpha=+$('scale-alpha').value,ratio=2**+$('scale-batch').value;
   $('scale-alpha-output').textContent=alpha.toFixed(2);$('scale-batch-output').textContent=ratio+'×';
-  const f=frame(640,310),x=r=>f.l+Math.log2(r)/6*f.iw;
+  const f=chartFrame('scaling-chart',640,310),x=r=>f.l+Math.log2(r)/6*f.iw;
   const cnrs=[1,.001],vals=cnrs.map(c=>Array.from({length:121},(_,i)=>({r:2**(i/20),v:NQM.displacement(c,2**(i/20),alpha)})));
   const ymax=Math.max(1.3,...vals.flat().map(p=>p.v))*1.08;
   const a=axes(f,0,ymax,[[1,'1×'],[4,'4×'],[16,'16×'],[64,'64× batch']],x,{format:v=>v.toFixed(1)+'×'});let s=a.svg;
@@ -145,6 +178,7 @@ function drawScaling(){
   vals.forEach((pts,i)=>{const color=i?colors.newton:colors.sgd;s+=`<path d="${line(pts,p=>x(p.r),p=>a.y(p.v))}" fill="none" stroke="${color}" stroke-width="2.7"/><circle cx="${x(ratio)}" cy="${a.y(NQM.displacement(cnrs[i],ratio,alpha))}" r="5" fill="${color}" stroke="#fffefa" stroke-width="2"/>`;});
   s+=svgText(f.l,12,'Expected movement per sample / reference',`${tickStyle}`);$('scaling-chart').innerHTML=s;
   $('movement-readout').innerHTML=cnrs.map((c,i)=>{const v=NQM.displacement(c,ratio,alpha);return `<div class="movement-value"><span>${i?'Low':'High'} CNR</span><strong>${v.toFixed(2)}×</strong><small>${Math.abs(v-1)<.02?'Almost preserved':v<1?'Less movement / sample':'More movement / sample'}</small></div>`;}).join('');
+  dispatchEvent(new Event('batchsize:scaling'));
   document.querySelectorAll('#scale-presets button').forEach(b=>{b.classList.toggle('active',+b.dataset.alpha===alpha);b.setAttribute('aria-pressed',String(+b.dataset.alpha===alpha));});
 }
 ['scale-alpha','scale-batch'].forEach(id=>$(id).addEventListener('input',drawScaling));
@@ -164,6 +198,7 @@ function drawIntervention(){
   $('recovery-text').textContent=!selected?'This branch was not run at this anchor. Choose another subspace or training step; no result is inferred.':arm==='fully scaled'?'All matrix directions use large-batch updates. This is the baseline penalty.':anchor>=11000?'Near the end of training, preserving these directions changes little. The early-training recovery does not persist throughout training.':arm==='random-768 held'?'A random subspace barely changes the penalty. Negative recovery means the measured loss gap got slightly larger.':`At step ${fmt(anchor)}, keeping ${fmt(selected.rank)} sharp directions on small-batch updates ${recovery>=0?'reduces':'increases'} the local penalty. This is a measured endpoint, not a projected final-training gain.`;
   $('anchor-strip').innerHTML=Array.from({length:12},(_,i)=>{const a=(i+1)*1000,r=DATA.recovery.find(r=>r.anchor===a&&r.arm==='top-768 held');return `<button class="anchor-cell ${a===anchor?'active':''}" data-anchor="${i+1}" aria-pressed="${a===anchor}" aria-label="Step ${a}, top 768 recovery ${r.percent}%"><span>${i+1}K</span><i><span style="height:${Math.max(1,r.percent/65*100)}%"></span></i><strong>${r.percent.toFixed(1)}%</strong></button>`;}).join('');
   document.querySelectorAll('.anchor-cell').forEach(b=>b.addEventListener('click',()=>{$('anchor').value=b.dataset.anchor;drawIntervention();}));
+  dispatchEvent(new Event('batchsize:intervention'));
   $('endpoint-table').innerHTML='<table><caption>Available branch endpoints at step '+fmt(anchor)+'</caption><thead><tr><th scope="col">Branch</th><th scope="col">Validation loss</th><th scope="col">Penalty (10⁻³ nats)</th></tr></thead><tbody>'+rows.map(r=>`<tr><th scope="row">${r.arm}</th><td>${r.loss.toFixed(6)}</td><td>${r.penalty.toFixed(2)}</td></tr>`).join('')+'</tbody></table>';
 }
 $('anchor').addEventListener('input',drawIntervention);$('held').addEventListener('change',drawIntervention);
@@ -183,6 +218,7 @@ $('theme-toggle').addEventListener('click',()=>{
   document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';
   try{localStorage.setItem('batchsize-theme',document.documentElement.dataset.theme);}catch(e){}
   updatePalette();drawRankings();renderRisk();renderSim();drawScaling();drawHero(heroTime);
+  dispatchEvent(new Event('batchsize:theme'));
 });
 // A setup URL preserves the toy experiment, including its starting point and noise seed.
 function loadSetup(){
@@ -199,9 +235,9 @@ $('sim-share').addEventListener('click',async()=>{
   try{await navigator.clipboard.writeText(url.href);feedback.textContent='Setup link copied. It includes your start point and noise seed.';}
   catch(e){feedback.textContent='Copy this link to share your setup: ';const field=document.createElement('input');field.readOnly=true;field.value=url.href;field.setAttribute('aria-label','Shareable experiment URL');feedback.appendChild(field);field.focus();field.select();}
 });
-let resizeTimer;addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{drawHero(heroTime);renderLandscape();},100);});
+let resizeTimer;addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{drawHero(heroTime);renderLandscape();renderLoss();drawRankings();drawScaling();},100);});
 updatePalette();loadSetup();drawRankings();configureSimulation();drawScaling();drawIntervention();configureHero();updateHeroMotion();
-if(!heroPaused)requestAnimationFrame(heroLoop);
+syncHeroPlayback();
 // Reveal only unseen sections, so the first screen and reduced-motion readers stay immediate.
 if(!reducedMotion.matches){
   const reveal=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');reveal.unobserve(e.target);}}),{threshold:.06});
