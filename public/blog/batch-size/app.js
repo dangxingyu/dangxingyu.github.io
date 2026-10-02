@@ -164,7 +164,6 @@ function drawHero(time){
   ctx.font='12px "Essay Sans",sans-serif';ctx.fillStyle=palette.muted;
   ctx.beginPath();ctx.arc(ox,oy,2.5,0,Math.PI*2);ctx.fill();ctx.textAlign='left';
   if(camera.from===0){const start=view(project(...hero.start));ctx.beginPath();ctx.arc(...start,4,0,Math.PI*2);ctx.strokeStyle=palette.ink;ctx.lineWidth=1;ctx.stroke();ctx.fillText('same start',start[0]+10,start[1]-10);}
-  const zoomText=camera.zoom.toFixed(1)+'× view';if($('hero-view').textContent!==zoomText)$('hero-view').textContent=zoomText;
   canvas.dataset.zoom=camera.zoom.toFixed(3);canvas.dataset.duration=hero.duration.toFixed(0);canvas.dataset.progress=progress.toFixed(3);
   canvas.dataset.steps=String(hero.paths.sgd.length-1);canvas.dataset.samples=String(Math.floor(progress*(hero.paths.sgd.length-1))*hero.batch);
 }
