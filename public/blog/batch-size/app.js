@@ -82,7 +82,7 @@ function configureHero(){
   hero.tuned=tunedMethods(hero);hero.paths={};
   const steps=NQM.settlingSteps(hero,hero.tuned);
   ['sgd','newton'].forEach(m=>{hero.paths[m]=NQM.trajectory(hero,m,hero.tuned[m].eta,7,steps);});
-  hero.duration=45000;
+  hero.duration=60000;
   $('hero-batch-output').textContent=fmt(hero.batch);
   $('hero-batch').setAttribute('aria-valuetext',`${hero.batch} samples per batch`);
   $('hero-winner').textContent=(hero.tuned.sgd.total<hero.tuned.newton.total?'SGD':'Newton')+' leads at 4K in expectation';
@@ -193,7 +193,7 @@ new IntersectionObserver(entries=>{heroVisible=entries[0].isIntersecting;syncHer
 reducedMotion.addEventListener('change',e=>{if(e.matches){heroPaused=true;heroTime=hero.duration;updateHeroMotion();syncHeroPlayback();drawHero(heroTime);}});
 document.fonts.ready.then(()=>{heroBackdrop.key='';drawHero(heroTime);simLayer.key='';simDetail.painted='';renderSim();});
 
-const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:2,duration:60000,progress:0,playing:false,paths:{},tuned:{},last:0};
+const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:1,duration:60000,progress:0,playing:false,paths:{},tuned:{},last:0};
 let simRAF=0,simConfigRAF=0,simVisible=true;
 const simLayer={canvas:document.createElement('canvas'),key:'',paths:null,end:-1,painted:-1,
   trails:{sgd:document.createElement('canvas'),newton:document.createElement('canvas')},history:{}};
@@ -461,7 +461,7 @@ function loadSetup(){
   const batch=read('batch',1,4096,1);$('sim-batch').value=Math.round(Math.log2(batch));
   $('sim-sharp').value=Math.round(read('sharp',2,60,20));$('sim-noise').value=Math.round(read('noise',0,80,8));
   sim.seed=Math.round(read('seed',0,4294967295,7));sim.start=[read('x',-1.85,1.85,1),read('y',-1.3,1.3,1)];
-  const speed=Number(params.get('speed'));sim.speed=[1,2,4].includes(speed)?speed:2;$('sim-speed').value=String(sim.speed);
+  const speed=Number(params.get('speed'));sim.speed=[1,2,4].includes(speed)?speed:1;$('sim-speed').value=String(sim.speed);
   simCamera.mode=reducedMotion.matches||params.get('view')==='overview'?'overview':'auto';
   $('sim-auto-view').setAttribute('aria-pressed',String(simCamera.mode==='auto'));$('sim-full-view').setAttribute('aria-pressed',String(simCamera.mode==='overview'));
 }

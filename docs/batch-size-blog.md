@@ -74,7 +74,7 @@ protocol, endpoint fields and hashes are included in the downloadable dataset.
 - The held-rank lens uses measured ranks only. Arrow keys move between available
   ranks and focus survives a chart redraw. Missing branches remain “Not run.”
 - The hero caches projected trajectories and vector meshes at each drawing scale.
-  Playback takes 45 seconds; large batches
+  Playback takes 60 seconds; large batches
   smoothly interpolate between actual optimizer states. This is a visual tween,
   not an additional optimizer update. Trajectories now continue with the same tuned learning rates beyond the 4,096-sample comparison budget. `settlingSteps` requires at least 192 updates and four comparison budgets, increasing the horizon when needed for initialization bias to fall below 0.5% of stationary variance (or a numerical tolerance in the noiseless case), with a 32,768-update cap. The original budget remains the basis of tuning, winner labels, expected-loss bars and the phase map. Its camera follows the recent paths, keeps
   the full accumulated trace as cached vectors, and
@@ -82,7 +82,7 @@ protocol, endpoint fields and hashes are included in the downloadable dataset.
   Hero and sandbox animation loops stop when
   their view is hidden or the document loses visibility. Manual pause freezes the
   current frame. Reduced-motion startup shows a static completed hero trajectory.
-- The sandbox runs for 60 seconds at 1× (30 seconds at the default 2×) and uses the same extended horizon as the hero. Its loss curve marks the original 4K comparison point and reports actual processed samples. The noise button reads “Resample noise.”
+- The sandbox runs for 60 seconds at the default 1× (30 seconds at 2×, 15 seconds at 4×) and uses the same extended horizon as the hero. Its loss curve marks the original 4K comparison point and reports actual processed samples. The noise button reads “Resample noise.”
 - The sandbox caches its contours and appends every newly revealed trajectory segment
   to offscreen canvases. The loss plot retains its axes and precomputes a bounded
   display curve, with the exact current update as its endpoint. Theme, size, replay,

@@ -33,7 +33,7 @@ vm.runInContext(`
   ${size}
   function frame(w,h,m){return {w,h,...m,iw:w-m.l-m.r,ih:h-m.t-m.b};}
   function axes(f,min,max){return {svg:'<line/>',y:v=>f.t+f.ih*(1-(v-min)/(max-min))};}
-  const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:2,duration:60000,progress:0,playing:false,last:0};
+  const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:1,duration:60000,progress:0,playing:false,last:0};
   const simLayer={canvas:document.createElement('canvas'),key:'',paths:null,end:-1,painted:-1,
     trails:{sgd:document.createElement('canvas'),newton:document.createElement('canvas')}};
   const simLoss={key:'',paths:null,end:-1,curves:{}};
@@ -172,7 +172,7 @@ for(const exponent of [0,8,12,8,0]){
   assert.equal(nodes['hero-canvas'].dataset.progress,'1.000');
   const paths=vm.runInContext('heroBackdrop.history',context);
   for(const method of ['sgd','newton'])assert.equal(paths[method].points.length,state.length,'The hero retains its full trace.');
-  assert.equal(state.duration,45000,'The cover holds a full 45-second playback, including large batches.');
+  assert.equal(state.duration,60000,'The cover holds a full 60-second playback, including large batches.');
 }
 vm.runInContext('reducedMotion.matches=true;heroPaused=true;configureHero()',context);
 assert.equal(nodes['hero-canvas'].dataset.progress,'1.000');
