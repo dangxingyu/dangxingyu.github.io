@@ -78,15 +78,16 @@
 
   function scaffoldPhaseMap() {
     if (el('phase-map').childElementCount) return;
-    let html = '<span class="phase-corner">Noise ↓ / batch →</span>';
+    let html = '<div class="phase-axis phase-axis-x"><span>Batch size</span><i aria-hidden="true"></i></div>'
+      + '<div class="phase-axis phase-axis-y"><span>Noise variance</span><i aria-hidden="true"></i></div>';
     for (let exponent = 0; exponent < columns; exponent++) {
       const batch = 2 ** exponent;
-      html += `<span class="phase-column">${batch >= 1024 ? batch / 1024 + 'K' : batch}</span>`;
+      html += `<span class="phase-column" style="grid-column:${exponent + 3};grid-row:2">${batch >= 1024 ? batch / 1024 + 'K' : batch}</span>`;
     }
     noiseLevels.forEach((noise, row) => {
-      html += `<span class="phase-row">${noise}</span>`;
+      html += `<span class="phase-row" style="grid-column:2;grid-row:${row + 3}">${noise}</span>`;
       for (let exponent = 0; exponent < columns; exponent++) {
-        html += `<button class="phase-cell" data-exponent="${exponent}" data-noise="${noise}" data-row="${row}" tabindex="-1" disabled aria-label="Batch ${2 ** exponent}, noise variance ${noise}: calculating"><span aria-hidden="true"></span></button>`;
+        html += `<button class="phase-cell" style="grid-column:${exponent + 3};grid-row:${row + 3}" data-exponent="${exponent}" data-noise="${noise}" data-row="${row}" tabindex="-1" disabled aria-label="Batch ${2 ** exponent}, noise variance ${noise}: calculating"><span aria-hidden="true"></span></button>`;
       }
     });
     el('phase-map').innerHTML = html;
@@ -95,8 +96,9 @@
     el('phase-map').setAttribute('aria-busy', String(busy));
     el('phase-map').classList.toggle('is-updating', busy);
     el('phase-progress').hidden = !busy;
+    el('phase-status').hidden = !busy;
     el('phase-map').querySelectorAll('button').forEach(cell => { cell.disabled = busy; });
-    el('phase-status').textContent = busy ? 'Comparing 104 experiments…' : '104 experiments, one fixed sample budget.';
+    el('phase-status').textContent = busy ? 'Comparing 104 experiments…' : '';
     if (busy) el('phase-progress').value = 0;
   }
   function showPhaseMap(key, cells, execution, computeMs = 0) {
@@ -144,6 +146,7 @@
       pendingKey = '';
       setPhaseBusy(false);
       el('phase-map').querySelectorAll('button').forEach(cell => { cell.disabled = true; });
+      el('phase-status').hidden = false;
       el('phase-status').textContent = 'The map could not be calculated. Change the starting point to try again; the experiment above still works.';
     }
   }
