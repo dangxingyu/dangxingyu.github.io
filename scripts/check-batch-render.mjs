@@ -19,7 +19,15 @@ function canvas(){
 const nodes={landscape:canvas(),'landscape-overview':canvas(),'sim-overview':{},'sim-window':{},'sim-zoom':{},'sim-auto-view':{setAttribute(){}},'sim-full-view':{setAttribute(){}},'sim-loss':{clientWidth:480,setAttribute(){},
   set innerHTML(value){this.markup=value;for(const method of ['sgd','newton'])nodes['sim-loss-'+method]={setAttribute(name,value){this[name]=value;}};},
   get innerHTML(){return this.markup;}},'sim-progress':{},'sim-progress-bar':{style:{}},'sim-play-label':{},'sim-play-icon':{}};
-const document={documentElement:{dataset:{theme:'light'}},hidden:false,createElement:canvas};
+const compassNodes=Object.fromEntries(['flat','sharp','origin'].map(name=>[name,{attributes:{},setAttribute(key,value){this.attributes[key]=String(value);}}]));
+const compass={querySelector(selector){
+  if(selector==='circle')return compassNodes.origin;
+  const axis=selector.match(/^\[data-compass-axis="(flat|sharp)"\]$/)?.[1];
+  assert(axis,'The compass selects a named coordinate arrow.');
+  return compassNodes[axis];
+}};
+const document={documentElement:{dataset:{theme:'light'}},hidden:false,createElement:canvas,
+  querySelector(selector){assert.equal(selector,'.coordinate-compass svg');return compass;}};
 const context=vm.createContext({document,Path2D:VectorPath,window:{devicePixelRatio:2},
   getComputedStyle:()=>({getPropertyValue:name=>name}),requestAnimationFrame:()=>1,cancelAnimationFrame(){},
   $:id=>nodes[id],token:name=>name,svgText:(x,y,text)=>`<text>${text}</text>`,colors:{sgd:'#a44530',newton:'#176d63'},fmt:n=>n.toLocaleString('en-US')});
@@ -197,3 +205,21 @@ for(const noise of [0,8,80])for(const batch of [1,256,4096]){
 console.log('PASS: monotonic smooth zoom and a final hero frame that waits for explicit replay.');
 
 console.log('PASS: full vector traces persist through auto zoom, replay, resize and reseeding in both figures.');
+
+// Symmetric coordinate probes cancel the surface height, exposing the rendered
+// tangent basis without duplicating the production projection coefficients.
+vm.runInContext(`hero.paths={sgd:[{w:[-.001,0]},{w:[.001,0]}],newton:[{w:[0,-.001]},{w:[0,.001]}]}`,context);
+for(const [width,height] of [[252,285],[340,285],[720,300],[1440,300]]){
+  nodes['hero-canvas'].getBoundingClientRect=()=>({width,height});
+  vm.runInContext('drawHero(0)',context);
+  const points=vm.runInContext('heroBackdrop.points',context);
+  for(const [axis,method,sign] of [['flat','sgd',1],['sharp','newton',-1]]){
+    const numbers=compassNodes[axis].attributes.d.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi).map(Number);
+    const arrow=[numbers[2]-numbers[0],numbers[3]-numbers[1]];
+    const projected=points[method][1].map((value,i)=>value-points[method][0][i]);
+    const cosine=(arrow[0]*projected[0]+arrow[1]*projected[1])/(Math.hypot(...arrow)*Math.hypot(...projected));
+    assert.ok(Math.abs(1-cosine)<1e-12,'Each compass arrow agrees with its rendered positive coordinate direction after resizing.');
+    assert.ok(sign*arrow[0]>0&&arrow[1]>0,'Flat points down-right; sharp points down-left.');
+  }
+}
+console.log('PASS: hero compass directions match the rendered tangent basis across phone and desktop sizes.');
