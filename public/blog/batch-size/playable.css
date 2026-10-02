@@ -224,12 +224,16 @@
 .rule-workspace .figure-axis-name::before{content:none}
 .rule-range-overview{margin:10px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
 .rule-range-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 5px;color:var(--muted);font-size:13px}
+.rule-range-toolbar .segmented{margin:0;flex:none}
 .rule-range-toolbar .segmented button{font-size:12px;padding:6px 11px;min-height:32px}
+.rule-range-actions{display:flex;align-items:center;gap:8px}
+.rule-range-reset{font-size:12px;padding:6px 10px;min-height:32px;border:1px solid var(--line);border-radius:6px;color:var(--muted);white-space:nowrap}
+.rule-range-reset:hover{background:var(--sunken);color:var(--ink)}
 #rule-overview{display:block;width:100%;cursor:crosshair}
 .rule-overview-cloud path{fill:none;stroke:var(--ink);stroke-width:1;stroke-opacity:.12;stroke-linejoin:round}
 .rule-cloud .rule-ghost{opacity:.035}
 .rule-cloud .rule-run{opacity:.05}
-@media(max-width:1000px){.rule-range-overview{margin:8px 0 12px;padding-top:8px}.rule-range-toolbar{font-size:12px}.rule-range-toolbar .segmented button{font-size:11px;padding:5px 8px;min-height:30px}}
+@media(max-width:1000px){.rule-range-overview{margin:8px 0 12px;padding-top:8px}.rule-range-toolbar{font-size:12px}.rule-range-toolbar .segmented button{font-size:11px;padding:5px 8px;min-height:30px}.rule-range-actions{gap:6px}.rule-range-reset{font-size:11px;padding:5px 8px;min-height:30px}}
 @media(max-height:650px) and (max-width:1000px){.rule-chart-view{position:static}}
 
 .rule-workspace .rule-atlas-key{margin-bottom:10px}

@@ -169,6 +169,7 @@
     rebuildBatchControls();rebuildPlot();updateBatch(state.index);
   });
   node('rule-range-tabs').addEventListener('click',e=>{const button=e.target.closest('[data-rule-range]');if(!button||button.dataset.ruleRange===state.range)return;pause();state.range=button.dataset.ruleRange;rebuildPlot();});
+  node('rule-reset').addEventListener('click',()=>{state.range='detail';choose(presetId('common'),'common');});
   node('rule-task-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-task]');if(b)setTask(b.dataset.task);});
   node('rule-builder').addEventListener('change',()=>{
     const choices=Object.fromEntries([...node('rule-builder').querySelectorAll('select')].map(select=>[select.dataset.coordinate,select.value]));
