@@ -52,10 +52,22 @@ function canvasSize(canvas){const rect=canvas.getBoundingClientRect(),dpr=Math.m
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
 let heroPaused=reducedMotion.matches,heroTime=heroPaused?5800:0,heroVisible=true,lastHero=0,heroRAF=0;
 const heroBackdrop={canvas:document.createElement('canvas'),key:''};
+const tuningCache=new Map();
+function tunedMethods(config){
+  const key=JSON.stringify([config.batch,config.sharp,config.noise,...config.start]);
+  if(tuningCache.has(key)){
+    const result=tuningCache.get(key);tuningCache.delete(key);tuningCache.set(key,result);return result;
+  }
+  const result={sgd:NQM.tune(config,'sgd'),newton:NQM.tune(config,'newton')};
+  tuningCache.set(key,result);
+  if(tuningCache.size>24)tuningCache.delete(tuningCache.keys().next().value);
+  return result;
+}
 const hero={batch:256,sharp:20,noise:8,start:[1,1],paths:{},tuned:{}};
 function configureHero(){
   hero.batch=2**+$('hero-batch').value;
-  ['sgd','newton'].forEach(m=>{hero.tuned[m]=NQM.tune(hero,m);hero.paths[m]=NQM.trajectory(hero,m,hero.tuned[m].eta,7);});
+  hero.tuned=tunedMethods(hero);
+  ['sgd','newton'].forEach(m=>{hero.paths[m]=NQM.trajectory(hero,m,hero.tuned[m].eta,7);});
   $('hero-batch-output').textContent=fmt(hero.batch);
   $('hero-batch').setAttribute('aria-valuetext',`${hero.batch} samples per batch`);
   $('hero-winner').textContent=(hero.tuned.sgd.total<hero.tuned.newton.total?'SGD':'Newton')+' leads in expectation';
@@ -104,13 +116,18 @@ $('hero-motion').addEventListener('click',()=>{heroPaused=!heroPaused;updateHero
 $('hero-batch').addEventListener('input',configureHero);
 new IntersectionObserver(entries=>{heroVisible=entries[0].isIntersecting;syncHeroPlayback();},{threshold:0}).observe($('hero-canvas'));
 reducedMotion.addEventListener('change',e=>{if(e.matches){heroPaused=true;heroTime=5800;updateHeroMotion();syncHeroPlayback();drawHero(heroTime);}});
-document.fonts.ready.then(()=>{heroBackdrop.key='';drawHero(heroTime);});
+document.fonts.ready.then(()=>{heroBackdrop.key='';drawHero(heroTime);simLayer.key='';renderSim();});
 
-const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,progress:0,playing:false,paths:{},tuned:{},last:0};
-let simRAF=0,simVisible=true;
+const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:2,progress:0,playing:false,paths:{},tuned:{},last:0};
+let simRAF=0,simConfigRAF=0,simVisible=true;
+const simLayer={canvas:document.createElement('canvas'),key:'',paths:null,end:-1,painted:-1,
+  trails:{sgd:document.createElement('canvas'),newton:document.createElement('canvas')}};
+const simLoss={key:'',paths:null,end:-1,curves:{}};
 function configureSimulation(){
+  cancelAnimationFrame(simConfigRAF);simConfigRAF=0;
   sim.batch=2**+$('sim-batch').value;sim.sharp=+$('sim-sharp').value;sim.noise=+$('sim-noise').value;sim.progress=0;sim.playing=false;sim.last=0;cancelAnimationFrame(simRAF);
-  ['sgd','newton'].forEach(m=>{sim.tuned[m]=NQM.tune(sim,m);sim.paths[m]=NQM.trajectory(sim,m,sim.tuned[m].eta,sim.seed);});
+  sim.tuned=tunedMethods(sim);sim.paths={};
+  ['sgd','newton'].forEach(m=>{sim.paths[m]=NQM.trajectory(sim,m,sim.tuned[m].eta,sim.seed);});
   const maxLoss=Math.max(.5*(sim.start[0]**2+sim.sharp*sim.start[1]**2),...Object.values(sim.paths).map(ps=>Math.max(...ps.map(p=>p.loss))),1e-2);
   sim.lossBounds={ymax:Math.ceil(Math.log10(maxLoss)),ymin:Math.min(-4,Math.floor(Math.log10(Math.max(Math.min(sim.tuned.sgd.total,sim.tuned.newton.total),1e-6)))-1)};
   syncSimPlayback();
@@ -128,27 +145,83 @@ function renderRisk(){
   $('sim-takeaway').innerHTML=Math.abs(a-b)<1e-12?'<strong>The methods are effectively tied in this setting.</strong> Change the geometry or the noise to explore another regime.':`<strong>${winner} has lower expected final loss here.</strong> ${sim.batch<=16?'With many noisy updates, the two methods balance residual error and injected noise differently. Try the large-batch preset.':'With fewer, cleaner updates, curvature rescaling can become more valuable. Try changing the noise or the starting point.'}`;
 }
 function renderLandscape(){
-  const {ctx,w,h}=canvasSize($('landscape'));ctx.clearRect(0,0,w,h);const scale=Math.min(w/4.5,h/3.35),cx=w*.5,cy=h*.53;
+  const {ctx,w,h,dpr}=canvasSize($('landscape'));const scale=Math.min(w/4.5,h/3.35),cx=w*.5,cy=h*.53;
   const X=x=>cx+x*scale,Y=y=>cy-y*scale;
-  ctx.save();ctx.beginPath();ctx.rect(9,0,w-18,h);ctx.clip();
-  for(let k=1;k<18;k++){const rx=k*.32*scale,ry=rx/Math.sqrt(sim.sharp);ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,2*Math.PI);ctx.strokeStyle=token(k%3===0?'--grid-strong':'--grid');ctx.lineWidth=k%3===0?1.1:.7;ctx.stroke();}
-  ctx.setLineDash([3,5]);ctx.beginPath();ctx.moveTo(10,cy);ctx.lineTo(w-10,cy);ctx.moveTo(cx,5);ctx.lineTo(cx,h-10);ctx.strokeStyle=token('--grid-strong');ctx.lineWidth=.6;ctx.stroke();ctx.setLineDash([]);
   const end=Math.min(NQM.T/sim.batch,Math.floor(sim.progress*NQM.T/sim.batch));
-  ['sgd','newton'].forEach(m=>{const pts=sim.paths[m];ctx.beginPath();for(let i=0;i<=end;i++){const p=pts[i].w;i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1]));}ctx.strokeStyle=colors[m];ctx.lineWidth=1.9;ctx.globalAlpha=.85;ctx.stroke();ctx.globalAlpha=1;const p=pts[end].w;ctx.beginPath();ctx.arc(X(p[0]),Y(p[1]),5,0,2*Math.PI);ctx.fillStyle=colors[m];ctx.fill();ctx.strokeStyle=token('--surface');ctx.lineWidth=1.5;ctx.stroke();});
-  ctx.beginPath();ctx.arc(X(sim.start[0]),Y(sim.start[1]),5.5,0,2*Math.PI);ctx.strokeStyle=token('--ink');ctx.lineWidth=1;ctx.stroke();ctx.font='11px "Essay Sans",sans-serif';ctx.fillStyle=token('--muted');ctx.fillText('start',X(sim.start[0])+9,Y(sim.start[1])-9);
-  ctx.beginPath();ctx.arc(cx,cy,2.5,0,2*Math.PI);ctx.fillStyle=token('--ink');ctx.fill();ctx.fillStyle=token('--muted');ctx.fillText('minimum',cx+8,cy+15);ctx.restore();
-  ctx.font='11px "Essay Sans",sans-serif';ctx.fillStyle=token('--muted');ctx.fillText('w₁ →',w-40,cy-8);ctx.fillText('w₂',cx+9,14);
+  const key=`${w}:${h}:${dpr}:${sim.sharp}:${document.documentElement.dataset.theme}`;
+  if(simLayer.key!==key){
+    simLayer.key=key;simLayer.paths=null;
+    const palette=getComputedStyle(document.documentElement);
+    simLayer.palette=Object.fromEntries(['ink','muted','surface','grid','grid-strong'].map(name=>[name,palette.getPropertyValue('--'+name).trim()]));
+    const bg=simLayer.canvas;bg.width=Math.round(w*dpr);bg.height=Math.round(h*dpr);
+    const back=bg.getContext('2d');back.setTransform(dpr,0,0,dpr,0,0);
+    back.save();back.beginPath();back.rect(9,0,w-18,h);back.clip();
+    for(let k=1;k<18;k++){const rx=k*.32*scale,ry=rx/Math.sqrt(sim.sharp);back.beginPath();back.ellipse(cx,cy,rx,ry,0,0,2*Math.PI);back.strokeStyle=simLayer.palette[k%3===0?'grid-strong':'grid'];back.lineWidth=k%3===0?1.1:.7;back.stroke();}
+    back.setLineDash([3,5]);back.beginPath();back.moveTo(10,cy);back.lineTo(w-10,cy);back.moveTo(cx,5);back.lineTo(cx,h-10);back.strokeStyle=simLayer.palette['grid-strong'];back.lineWidth=.6;back.stroke();back.restore();
+    back.font='11px "Essay Sans",sans-serif';back.fillStyle=simLayer.palette.muted;back.fillText('w₁ →',w-40,cy-8);back.fillText('w₂',cx+9,14);
+  }
+  // Keep every simulated update. Only append the newly revealed segments.
+  if(simLayer.paths!==sim.paths||end<simLayer.end){
+    simLayer.paths=sim.paths;simLayer.end=0;simLayer.painted=-1;
+    Object.values(simLayer.trails).forEach(canvas=>{canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.getContext('2d').setTransform(dpr,0,0,dpr,0,0);});
+  }
+  if(end===simLayer.painted)return {scale,cx,cy};
+  ['sgd','newton'].forEach(m=>{
+    const trail=simLayer.trails[m].getContext('2d'),pts=sim.paths[m];
+    if(end>simLayer.end){
+      trail.beginPath();trail.moveTo(X(pts[simLayer.end].w[0]),Y(pts[simLayer.end].w[1]));
+      for(let i=simLayer.end+1;i<=end;i++)trail.lineTo(X(pts[i].w[0]),Y(pts[i].w[1]));
+      trail.strokeStyle=colors[m];trail.lineWidth=1.9;trail.stroke();
+    }
+  });
+  simLayer.end=end;simLayer.painted=end;
+  ctx.clearRect(0,0,w,h);ctx.drawImage(simLayer.canvas,0,0,w,h);
+  ctx.save();ctx.beginPath();ctx.rect(9,0,w-18,h);ctx.clip();
+  ['sgd','newton'].forEach(m=>{
+    ctx.globalAlpha=.85;ctx.drawImage(simLayer.trails[m],0,0,w,h);ctx.globalAlpha=1;
+    const p=sim.paths[m][end].w;ctx.beginPath();ctx.arc(X(p[0]),Y(p[1]),5,0,2*Math.PI);ctx.fillStyle=colors[m];ctx.fill();ctx.strokeStyle=simLayer.palette.surface;ctx.lineWidth=1.5;ctx.stroke();
+  });
+  ctx.beginPath();ctx.arc(X(sim.start[0]),Y(sim.start[1]),5.5,0,2*Math.PI);ctx.strokeStyle=simLayer.palette.ink;ctx.lineWidth=1;ctx.stroke();ctx.font='11px "Essay Sans",sans-serif';ctx.fillStyle=simLayer.palette.muted;ctx.fillText('start',X(sim.start[0])+9,Y(sim.start[1])-9);
+  ctx.beginPath();ctx.arc(cx,cy,2.5,0,2*Math.PI);ctx.fillStyle=simLayer.palette.ink;ctx.fill();ctx.fillStyle=simLayer.palette.muted;ctx.fillText('minimum',cx+8,cy+15);ctx.restore();
   return {scale,cx,cy};
 }
 function renderLoss(){
-  const f=chartFrame('sim-loss',480,170,{l:43,r:12,t:12,b:28}),x=s=>f.l+s/NQM.T*f.iw;
+  const chart=$('sim-loss'),width=Math.max(360,Math.min(480,chart.clientWidth));
+  const key=`${width}:${document.documentElement.dataset.theme}`;
   const {ymax,ymin}=sim.lossBounds;
-  const a=axes(f,ymin,ymax,[[0,'0'],[2048,'2,048'],[4096,'4,096 samples']],x,{dark:true,format:v=>(10**v).toExponential(0)});
-  let s=a.svg;['sgd','newton'].forEach(m=>{const pts=sim.paths[m].filter((p,i)=>i<=Math.floor(sim.progress*(sim.paths[m].length-1)));const stride=Math.max(1,Math.floor(pts.length/350));const sampled=pts.filter((p,i)=>i%stride===0||i===pts.length-1);s+=`<path d="${line(sampled,p=>x(p.samples),p=>a.y(Math.max(ymin,Math.log10(Math.max(p.loss,1e-15)))))}" fill="none" stroke="${colors[m]}" stroke-width="1.6"/>`;});
-  $('sim-loss').innerHTML=s;
+  if(simLoss.key!==key||simLoss.paths!==sim.paths){
+    simLoss.key=key;simLoss.paths=sim.paths;simLoss.end=-1;
+    chart.setAttribute('viewBox',`0 0 ${width} 170`);
+    const f=frame(width,170,{l:43,r:12,t:12,b:28}),x=s=>f.l+s/NQM.T*f.iw;
+    const a=axes(f,ymin,ymax,[[0,'0'],[2048,'2,048'],[4096,'4,096 samples']],x,{dark:true,format:v=>(10**v).toExponential(0)});
+    chart.innerHTML=a.svg+['sgd','newton'].map(m=>`<path id="sim-loss-${m}" fill="none" stroke="${colors[m]}" stroke-width="1.6"/>`).join('');
+    ['sgd','newton'].forEach(m=>{
+      const pts=sim.paths[m],stride=Math.max(1,Math.ceil((pts.length-1)/350));
+      const coordinates=pts.map(p=>`${x(p.samples).toFixed(2)},${a.y(Math.max(ymin,Math.log10(Math.max(p.loss,1e-15)))).toFixed(2)}`);
+      let path='';const offsets=[];
+      for(let i=0;i<pts.length;i+=stride){path+=(i?'L':'M')+coordinates[i];offsets.push(path.length);}
+      simLoss.curves[m]={path,offsets,coordinates,stride,element:$(`sim-loss-${m}`)};
+    });
+  }
+  const end=Math.floor(sim.progress*(sim.paths.sgd.length-1));
+  if(end===simLoss.end)return;
+  simLoss.end=end;
+  ['sgd','newton'].forEach(m=>{
+    const curve=simLoss.curves[m];
+    const path=curve.path.slice(0,curve.offsets[Math.floor(end/curve.stride)])+(end%curve.stride?'L'+curve.coordinates[end]:'');
+    curve.element.setAttribute('d',path);
+  });
 }
-function renderSim(){renderLandscape();renderLoss();const samples=Math.floor(sim.progress*NQM.T/sim.batch)*sim.batch;$('sim-progress').textContent=`${fmt(samples)} / 4,096 samples`;$('sim-progress-bar').style.width=(sim.progress*100)+'%';$('sim-play').innerHTML=sim.playing?'Ⅱ Pause':sim.progress>=1?'↻ Replay':'▶ Run experiment';}
-function tickSim(ts){simRAF=0;if(!sim.playing||!simVisible||document.hidden)return;if(sim.last)sim.progress=Math.min(1,sim.progress+Math.min(ts-sim.last,60)/5500);sim.last=ts;if(sim.progress>=1)sim.playing=false;renderSim();if(sim.playing)simRAF=requestAnimationFrame(tickSim);else syncSimPlayback();}
+function renderSim(){
+  renderLandscape();renderLoss();
+  const samples=Math.floor(sim.progress*NQM.T/sim.batch)*sim.batch;
+  const progress=`${fmt(samples)} / 4,096 samples`,label=sim.playing?'Pause':sim.progress>=1?'Replay':'Run experiment',icon=sim.playing?'Ⅱ':sim.progress>=1?'↻':'▶';
+  if($('sim-progress').textContent!==progress)$('sim-progress').textContent=progress;
+  $('sim-progress-bar').style.width=(sim.progress*100)+'%';
+  if($('sim-play-label').textContent!==label)$('sim-play-label').textContent=label;
+  if($('sim-play-icon').textContent!==icon)$('sim-play-icon').textContent=icon;
+}
+function tickSim(ts){simRAF=0;if(!sim.playing||!simVisible||document.hidden)return;if(sim.last)sim.progress=Math.min(1,sim.progress+Math.min(ts-sim.last,60)*sim.speed/5500);sim.last=ts;if(sim.progress>=1)sim.playing=false;renderSim();if(sim.playing)simRAF=requestAnimationFrame(tickSim);else syncSimPlayback();}
 function syncSimPlayback(){
   const running=sim.playing&&simVisible&&!document.hidden;$('landscape').dataset.animating=String(running);
   if(!running){cancelAnimationFrame(simRAF);simRAF=0;sim.last=0;}
@@ -159,7 +232,8 @@ new IntersectionObserver(entries=>{simVisible=entries[0].isIntersecting;syncSimP
 document.addEventListener('visibilitychange',()=>{syncHeroPlayback();syncSimPlayback();});
 $('sim-reset').addEventListener('click',configureSimulation);
 $('sim-reseed').addEventListener('click',()=>{sim.seed++;configureSimulation();});
-['sim-batch','sim-sharp','sim-noise'].forEach(id=>$(id).addEventListener('input',configureSimulation));
+['sim-batch','sim-sharp','sim-noise'].forEach(id=>$(id).addEventListener('input',()=>{if(!simConfigRAF)simConfigRAF=requestAnimationFrame(configureSimulation);}));
+$('sim-speed').addEventListener('change',()=>{sim.speed=Number($('sim-speed').value);});
 $('preset-small').addEventListener('click',()=>{$('sim-batch').value=0;configureSimulation();});
 $('preset-large').addEventListener('click',()=>{$('sim-batch').value=8;configureSimulation();});
 $('landscape').addEventListener('pointerdown',e=>{const rect=e.currentTarget.getBoundingClientRect(),{scale,cx,cy}=renderLandscape();sim.start=[Math.max(-1.85,Math.min(1.85,(e.clientX-rect.left-cx)/scale)),Math.max(-1.3,Math.min(1.3,(cy-(e.clientY-rect.top))/scale))];configureSimulation();});
@@ -226,10 +300,11 @@ function loadSetup(){
   const batch=read('batch',1,4096,1);$('sim-batch').value=Math.round(Math.log2(batch));
   $('sim-sharp').value=Math.round(read('sharp',2,60,20));$('sim-noise').value=Math.round(read('noise',0,80,8));
   sim.seed=Math.round(read('seed',0,4294967295,7));sim.start=[read('x',-1.85,1.85,1),read('y',-1.3,1.3,1)];
+  const speed=Number(params.get('speed'));sim.speed=[1,2,4].includes(speed)?speed:2;$('sim-speed').value=String(sim.speed);
 }
 $('sim-share').addEventListener('click',async()=>{
   const url=new URL(location.href);url.search='';
-  Object.entries({batch:sim.batch,sharp:sim.sharp,noise:sim.noise,seed:sim.seed,x:sim.start[0],y:sim.start[1]}).forEach(([k,v])=>url.searchParams.set(k,v));url.hash='playground';
+  Object.entries({batch:sim.batch,sharp:sim.sharp,noise:sim.noise,seed:sim.seed,x:sim.start[0],y:sim.start[1],speed:sim.speed}).forEach(([k,v])=>url.searchParams.set(k,v));url.hash='playground';
   history.replaceState(null,'',url);const feedback=$('share-feedback');
   try{await navigator.clipboard.writeText(url.href);feedback.textContent='Setup link copied. It includes your start point and noise seed.';}
   catch(e){feedback.textContent='Copy this link to share your setup: ';const field=document.createElement('input');field.readOnly=true;field.value=url.href;field.setAttribute('aria-label','Shareable experiment URL');feedback.appendChild(field);field.focus();field.select();}

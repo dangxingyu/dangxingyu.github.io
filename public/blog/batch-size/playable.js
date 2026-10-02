@@ -304,7 +304,7 @@
     if(random) s+=`<path d="M${x(768)-5},${y(random.percent)-5}l10,10m-10,0l10,-10" stroke="${token('--orange')}" stroke-width="2"/><title>Random 768: ${random.percent.toFixed(1)}% recovery</title>`;
     el('rank-recovery-chart').innerHTML=`<title>Measured recovery at training step ${fmt(anchor)}; green circles are sharp directions, rust cross is random 768</title>${s}`;
     if(focused)el('rank-recovery-chart').querySelector(`[data-arm="${focused}"]`)?.focus({preventScroll:true});
-    el('rank-lens-note').textContent=`Green circles: sharp directions. Rust cross: random 768. ${rows.length} sharp ${rows.length===1?'rank was':'ranks were'} measured at this anchor. Missing ranks are not interpolated; horizontal spacing is logarithmic.`;
+    el('rank-lens-note').textContent='Green circles: sharp; rust cross: random 768. Log rank axis; measured points only.';
   }
   el('rank-recovery-chart').addEventListener('click', event=>{
     const point=event.target.closest('[data-arm]');

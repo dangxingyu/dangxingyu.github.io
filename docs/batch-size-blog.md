@@ -29,6 +29,14 @@ must remain explicitly distinguished.
 - The hero caches its static landscape. Hero and sandbox animation loops stop when
   their view is hidden or the document loses visibility. Manual pause freezes the
   current frame. Reduced-motion startup shows a static completed hero trajectory.
+- The sandbox caches its contours and appends every newly revealed trajectory segment
+  to offscreen canvases. The loss plot retains its axes and precomputes a bounded
+  display curve, with the exact current update as its endpoint. Theme, size, replay,
+  and experiment changes invalidate the relevant drawing caches.
+- Learning-rate results are reused in a 24-entry cache keyed by batch, curvature,
+  noise, and initial point; reseeding retains the same tuning. Slider inputs coalesce
+  within a browser frame. Playback defaults to 2×, offers 1× and 4×, and is preserved
+  in shared setup URLs. Playback speed does not change the simulated samples.
 
 ## Fonts
 
@@ -58,6 +66,9 @@ The numerical check verifies 624 cells against an independent moment recurrence,
 the original tuner, and stable step bounds. It runs the production worker in a real
 worker thread, checks that rapid changes publish only the newest geometry, and
 checks cancellation of the cooperative fallback.
+It also checks that incremental drawing retains every physical trajectory segment,
+the loss plot ends at the actual current update, replay and cache invalidation work,
+playback speed advances correctly, and offscreen animation pauses.
 
 Browser checks should cover 320/390 px phones, a tablet, and desktop layouts in both
 themes; menu navigation and Escape; phase-map controls and cache reuse; keyboard

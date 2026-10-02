@@ -127,3 +127,5 @@ try {
   verify(result.cells, finalGeometry);
   console.log(`PASS: 624 cells checked against independent moments; worker cancellation and cooperative fallback verified (${result.computeMs.toFixed(1)} ms for the final worker map).`);
 } finally { await worker.terminate(); }
+
+await import('./check-batch-render.mjs');
