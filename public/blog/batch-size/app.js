@@ -40,7 +40,6 @@ function drawRankings(){
   const gap=sorted[1].loss-sorted[0].loss;
   $('ranking-insight').innerHTML=`<strong>${sorted[0].optimizer} leads by ${gap.toFixed(4)} nats</strong> over ${sorted[1].optimizer}.${gap<.002?' This is a close comparison, below the 0.002-nat tuning acceptance threshold.':''} ${fmt(sorted[0].steps)} updates at this batch size.`;
   dispatchEvent(new Event('batchsize:rankings'));
-  $('ranking-caveat').textContent=family==='standard_wd'?'Points: reported medians; whiskers: observed min-max, not confidence intervals. Lines guide the eye. SOAP denotes the KL-SOAP implementation.':'HyperBall points mostly have one run; they do not establish statistical significance. SOAP denotes KL-SOAP. Lines guide the eye.';
   $('board-batch').textContent=batchName(selected);$('rank-batch-output').textContent=batchName(selected)+' tokens';
   document.querySelectorAll('#rank-ticks button').forEach(b=>{b.classList.toggle('active',+b.dataset.index===index);b.setAttribute('aria-pressed',String(+b.dataset.index===index));});
 }
