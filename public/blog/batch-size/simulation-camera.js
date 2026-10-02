@@ -12,7 +12,7 @@
     return out;
   }
   function prepare(paths){
-    const count=paths.sgd.length,window=Math.min(count,1+2**Math.ceil(Math.log2(Math.max(1,(count-1)*.06))));
+    const count=paths.sgd.length,window=Math.min(count,257,1+2**Math.ceil(Math.log2(Math.max(1,(count-1)*.06))));
     const x=new Float64Array(count),y=new Float64Array(count);
     for(let i=0;i<count;i++){
       x[i]=Math.max(Math.abs(paths.sgd[i].w[0]),Math.abs(paths.newton[i].w[0]));

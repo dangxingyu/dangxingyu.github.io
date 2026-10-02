@@ -13,7 +13,7 @@ for (const name of ['physics.js', 'phase-compute.js']) {
 const { PhaseMap, NQM } = context;
 
 // An independent moment recurrence checks the numerical values crossing the worker boundary.
-function recurrence(config, method, eta) {
+function recurrence(config, method, eta, steps = NQM.T / config.batch) {
   let loss = 0;
   for (let direction = 0; direction < 2; direction++) {
     const curvature = direction ? config.sharp : 1;
@@ -21,7 +21,7 @@ function recurrence(config, method, eta) {
     const step = method === 'newton' ? eta / curvature : eta;
     const contraction = 1 - step * curvature;
     let mean = config.start[direction], variance = 0;
-    for (let update = 0; update < NQM.T / config.batch; update++) {
+    for (let update = 0; update < steps; update++) {
       mean *= contraction;
       variance = contraction ** 2 * variance + step ** 2 * noise / config.batch;
     }
@@ -63,6 +63,34 @@ for (const geometry of [
   assert.equal(yields, 7);
   verify(cells, geometry);
 }
+// Continuation leaves the paper comparison intact and reaches the noise floor.
+for(const sharp of [2,20,60])for(const noise of [0,8,80])for(const batch of [1,256,4096]) {
+  const config={sharp,noise,batch,start:[1,1]};
+  const tuned={sgd:NQM.tune(config,'sgd'),newton:NQM.tune(config,'newton')};
+  const steps=NQM.settlingSteps(config,tuned);
+  assert(Number.isInteger(steps)&&steps>=192&&steps>=4*NQM.T/batch&&steps<=32768);
+  for(const method of ['sgd','newton']) {
+    const eta=tuned[method].eta, result=NQM.moments(config,method,eta,steps);
+    const independent=recurrence(config,method,eta,steps);
+    assert(Math.abs(result.total-independent)<1e-11);
+    const q=(1-eta)**2;
+    const stationary=eta===0?0:.5*eta*eta*noise/batch/(1-q);
+    const tolerance=Math.max((1+sharp)*.5e-8,stationary*.005,1e-12);
+    assert(result.bias<=tolerance*(1+1e-7),'Extended trajectories reach the stationary-noise regime.');
+  }
+}
+for(const batch of [1,256,4096]) {
+  const config={batch,sharp:20,noise:8,start:[1,1]};
+  const tuned={sgd:NQM.tune(config,'sgd'),newton:NQM.tune(config,'newton')};
+  const steps=NQM.settlingSteps(config,tuned);
+  for(const method of ['sgd','newton']) {
+    const original=NQM.trajectory(config,method,tuned[method].eta,7);
+    const continued=NQM.trajectory(config,method,tuned[method].eta,7,steps);
+    assert.equal(JSON.stringify(continued.slice(0,original.length)),JSON.stringify(original),'All original-budget updates remain identical.');
+    assert.equal(continued.at(-1).samples,steps*batch);
+  }
+}
+console.log('PASS: extended runs approach stationary noise without changing the 4K comparison or original trajectory prefixes.');
 let current = true, completed = 0;
 const cancelled = await PhaseMap.compute({ sharp: 20, start: [1, 1] }, {
   isCurrent: () => current,

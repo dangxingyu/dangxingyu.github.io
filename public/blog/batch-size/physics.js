@@ -33,9 +33,29 @@
     consider((lo + hi) / 2);
     return best;
   }
-  function trajectory(config, method, eta, seed) {
+  function settlingSteps(config, tuned) {
+    const h = [1, config.sharp], c = [config.noise, 0], start = config.start || [1, 1];
+    const initial = .5 * (start[0] ** 2 + config.sharp * start[1] ** 2);
+    let steps = Math.max(192, 4 * T / config.batch);
+    for (const method of ['sgd', 'newton']) {
+      const eta = tuned[method].eta;
+      const q = h.map(hi => (1 - (method === 'newton' ? eta / hi : eta) * hi) ** 2);
+      const stationary = h.reduce((sum, hi, i) => {
+        const a = method === 'newton' ? eta / hi : eta;
+        return sum + (q[i] < 1 ? .5 * hi * a * a * c[i] / config.batch / (1 - q[i]) : 0);
+      }, 0);
+      const tolerance = Math.max(initial * 1e-8, stationary * .005, 1e-12);
+      h.forEach((hi, i) => {
+        const bias = .5 * hi * start[i] ** 2;
+        if (bias <= tolerance / 2 || q[i] === 0) return;
+        steps = Math.max(steps, q[i] >= 1 ? 32768 : Math.ceil(Math.log(tolerance / (2 * bias)) / Math.log(q[i])));
+      });
+    }
+    return Math.min(32768, steps);
+  }
+  function trajectory(config, method, eta, seed, steps = T / config.batch) {
     const random = rng(seed), w = [...(config.start || [1, 1])], out = [{ w: [...w], samples: 0, loss: .5 * (w[0] ** 2 + config.sharp * w[1] ** 2) }];
-    for (let k = 0; k < T / config.batch; k++) {
+    for (let k = 0; k < steps; k++) {
       const g = [w[0] + Math.sqrt(config.noise / config.batch) * gaussian(random), config.sharp * w[1]];
       w[0] -= eta * g[0]; w[1] -= eta * g[1] / (method === 'newton' ? config.sharp : 1);
       out.push({ w: [...w], samples: (k + 1) * config.batch, loss: .5 * (w[0] ** 2 + config.sharp * w[1] ** 2) });
@@ -50,6 +70,6 @@
   }
   function response(cnr, batch, mu = .9) { return erf(Math.sqrt(cnr * batch * (1 + mu) / (2 * (1 - mu)))); }
   function displacement(cnr, ratio, alpha) { return ratio ** (alpha - 1) * response(cnr, ratio) / response(cnr, 1); }
-  const api = { T, rng, gaussian, moments, tune, trajectory, erf, response, displacement };
+  const api = { T, rng, gaussian, moments, tune, settlingSteps, trajectory, erf, response, displacement };
   if (typeof module !== 'undefined') module.exports = api; else root.NQM = api;
 })(typeof window !== 'undefined' ? window : globalThis);

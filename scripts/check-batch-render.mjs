@@ -22,7 +22,7 @@ const nodes={landscape:canvas(),'landscape-overview':canvas(),'sim-overview':{},
 const document={documentElement:{dataset:{theme:'light'}},hidden:false,createElement:canvas};
 const context=vm.createContext({document,Path2D:VectorPath,window:{devicePixelRatio:2},
   getComputedStyle:()=>({getPropertyValue:name=>name}),requestAnimationFrame:()=>1,cancelAnimationFrame(){},
-  $:id=>nodes[id],colors:{sgd:'#a44530',newton:'#176d63'},fmt:n=>n.toLocaleString('en-US')});
+  $:id=>nodes[id],token:name=>name,svgText:(x,y,text)=>`<text>${text}</text>`,colors:{sgd:'#a44530',newton:'#176d63'},fmt:n=>n.toLocaleString('en-US')});
 vm.runInContext(physics,context);
 vm.runInContext(cameraSource,context);
 const size=source.slice(source.indexOf('function canvasSize('),source.indexOf('const reducedMotion='));
@@ -33,7 +33,7 @@ vm.runInContext(`
   ${size}
   function frame(w,h,m){return {w,h,...m,iw:w-m.l-m.r,ih:h-m.t-m.b};}
   function axes(f,min,max){return {svg:'<line/>',y:v=>f.t+f.ih*(1-(v-min)/(max-min))};}
-  const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:2,progress:0,playing:false,last:0};
+  const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:2,duration:60000,progress:0,playing:false,last:0};
   const simLayer={canvas:document.createElement('canvas'),key:'',paths:null,end:-1,painted:-1,
     trails:{sgd:document.createElement('canvas'),newton:document.createElement('canvas')}};
   const simLoss={key:'',paths:null,end:-1,curves:{}};
@@ -42,7 +42,8 @@ vm.runInContext(`
   let simRAF=0,simVisible=true;
   function setup(){
     sim.tuned={sgd:NQM.tune(sim,'sgd'),newton:NQM.tune(sim,'newton')};
-    sim.paths=Object.fromEntries(['sgd','newton'].map(m=>[m,NQM.trajectory(sim,m,sim.tuned[m].eta,sim.seed)]));
+    const steps=NQM.settlingSteps(sim,sim.tuned);
+    sim.paths=Object.fromEntries(['sgd','newton'].map(m=>[m,NQM.trajectory(sim,m,sim.tuned[m].eta,sim.seed,steps)]));
     sim.lossBounds={ymin:-5,ymax:2};
   }
   ${renderer}
@@ -51,7 +52,7 @@ vm.runInContext(`
 `,context);
 function checkEnd(progress){
   vm.runInContext(`sim.progress=${progress};renderSim();`,context);
-  const state=vm.runInContext('({sim,simLayer,simLoss})',context),end=Math.floor(progress*4096);
+  const state=vm.runInContext('({sim,simLayer,simLoss})',context),end=Math.floor(progress*(state.sim.paths.sgd.length-1));
   const scale=Math.min(720/4.5,320/3.35);
   for(const method of ['sgd','newton']){
     const expected=state.sim.paths[method].slice(1,end+1).map(p=>[360+p.w[0]*scale,169.6-p.w[1]*scale]);
@@ -65,7 +66,7 @@ function checkEnd(progress){
     const path=nodes['sim-loss-'+method].d;
     assert.ok(path.split(/[ML]/).length<=353,'Loss-chart display work stays bounded.');
     const p=state.sim.paths[method][end];
-    const x=(43+p.samples/4096*425).toFixed(2);
+    const x=(43+p.samples/state.sim.paths.sgd.at(-1).samples*425).toFixed(2);
     const logLoss=Math.max(-5,Math.log10(Math.max(p.loss,1e-15)));
     const y=(12+130*(1-(logLoss+5)/7)).toFixed(2);
     assert.ok(path.endsWith(`${x},${y}`),'The displayed loss path ends at the actual current update.');
@@ -82,10 +83,11 @@ vm.runInContext('renderSim()',context);
 assert.equal(ellipses,51,'Resizing invalidates the backdrop.');
 nodes.landscape.getBoundingClientRect=()=>({width:720,height:320});
 vm.runInContext('sim.seed=8;setup()',context);checkEnd(.3); // Reseeding invalidates trajectories.
-assert.equal(vm.runInContext('sim.paths.sgd.length',context),4097);
+assert.equal(vm.runInContext('sim.paths.sgd.length',context),16385);
+assert(nodes['sim-loss'].markup.includes('comparison-budget'),'The loss chart marks the original comparison budget.');
 for(const speed of [1,2,4]){
   const progress=vm.runInContext(`sim.speed=${speed};sim.progress=0;sim.playing=true;sim.last=100;tickSim(140);sim.progress`,context);
-  assert.ok(Math.abs(progress-40*speed/5500)<1e-12);
+  assert.ok(Math.abs(progress-40*speed/60000)<1e-12);
 }
 vm.runInContext('simVisible=false;syncSimPlayback()',context);
 assert.equal(nodes.landscape.dataset.animating,'false');
@@ -135,7 +137,7 @@ for(const start of [[0,0],[-1.85,-1.3],[1.85,1.3],[1,0],[0,-1]])for(const sharp 
   vm.runInContext(`sim.batch=1;sim.noise=80;sim.sharp=${sharp};sim.start=${JSON.stringify(start)};setup();`,context);
   for(const progress of [.1,.5,1]){
     const state=vm.runInContext(`sim.progress=${progress};({cam:renderLandscape(),paths:sim.paths})`,context);
-    const end=Math.floor(progress*4096);
+    const end=Math.floor(progress*(state.paths.sgd.length-1));
     for(const method of ['sgd','newton']){
       const p=state.paths[method][end].w;
       assert.ok(Math.abs(p[0]*state.cam.scale)<=88.1);
@@ -164,18 +166,18 @@ for(const exponent of [0,8,12,8,0]){
   nodes['hero-batch'].value=String(exponent);
   vm.runInContext('configureHero()',context);
   const state=vm.runInContext('({duration:hero.duration,length:heroBackdrop.prepared.count})',context);
-  assert.equal(state.length,1+4096/(2**exponent),'Changing batch invalidates projected paths.');
+  assert.equal(state.length,vm.runInContext('1+NQM.settlingSteps(hero,hero.tuned)',context),'Changing batch rebuilds the extended projected paths.');
+  assert(state.length>=193,'Large-batch trajectories take enough updates to settle.');
   for(const progress of [0,.1,.5,.9,1])vm.runInContext(`drawHero(hero.duration*${progress})`,context);
   assert.equal(nodes['hero-canvas'].dataset.progress,'1.000');
   const paths=vm.runInContext('heroBackdrop.history',context);
   for(const method of ['sgd','newton'])assert.equal(paths[method].points.length,state.length,'The hero retains its full trace.');
-  assert(state.duration>=11000&&state.duration<=24000,'The cover provides a longer, bounded viewing interval.');
-  if(exponent===12)assert.equal(state.duration,11200,'Even a one-update run gives the camera time to unfold.');
+  assert.equal(state.duration,45000,'The cover holds a full 45-second playback, including large batches.');
 }
 vm.runInContext('reducedMotion.matches=true;heroPaused=true;configureHero()',context);
 assert.equal(nodes['hero-canvas'].dataset.progress,'1.000');
 assert.equal(nodes['hero-canvas'].dataset.zoom,'1.000');
-console.log('PASS: hero batch changes invalidate projection caches, sparse runs finish sooner, and reduced-motion startup stays static.');
+console.log('PASS: hero batch changes invalidate projection caches, extended runs retain all updates, and reduced-motion startup stays static.');
 
 vm.runInContext('reducedMotion.matches=false;heroPaused=false;heroVisible=true;heroTime=hero.duration-20;lastHero=100;heroLoop(140)',context);
 assert.equal(nodes['hero-canvas'].dataset.animating,'false');

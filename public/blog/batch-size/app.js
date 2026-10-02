@@ -80,11 +80,12 @@ const hero={batch:256,sharp:20,noise:8,start:[1,1],paths:{},tuned:{}};
 function configureHero(){
   hero.batch=2**+$('hero-batch').value;
   hero.tuned=tunedMethods(hero);hero.paths={};
-  ['sgd','newton'].forEach(m=>{hero.paths[m]=NQM.trajectory(hero,m,hero.tuned[m].eta,7);});
-  hero.duration=Math.min(24000,10000+1200*Math.log2(1+NQM.T/hero.batch));
+  const steps=NQM.settlingSteps(hero,hero.tuned);
+  ['sgd','newton'].forEach(m=>{hero.paths[m]=NQM.trajectory(hero,m,hero.tuned[m].eta,7,steps);});
+  hero.duration=45000;
   $('hero-batch-output').textContent=fmt(hero.batch);
   $('hero-batch').setAttribute('aria-valuetext',`${hero.batch} samples per batch`);
-  $('hero-winner').textContent=(hero.tuned.sgd.total<hero.tuned.newton.total?'SGD':'Newton')+' leads in expectation';
+  $('hero-winner').textContent=(hero.tuned.sgd.total<hero.tuned.newton.total?'SGD':'Newton')+' leads at 4K in expectation';
   heroTime=heroPaused?hero.duration:0;updateHeroMotion();drawHero(heroTime);syncHeroPlayback();
 }
 function drawHero(time){
@@ -165,6 +166,7 @@ function drawHero(time){
   if(camera.from===0){const start=view(project(...hero.start));ctx.beginPath();ctx.arc(...start,4,0,Math.PI*2);ctx.strokeStyle=palette.ink;ctx.lineWidth=1;ctx.stroke();ctx.fillText('same start',start[0]+10,start[1]-10);}
   const zoomText=camera.zoom.toFixed(1)+'× view';if($('hero-view').textContent!==zoomText)$('hero-view').textContent=zoomText;
   canvas.dataset.zoom=camera.zoom.toFixed(3);canvas.dataset.duration=hero.duration.toFixed(0);canvas.dataset.progress=progress.toFixed(3);
+  canvas.dataset.steps=String(hero.paths.sgd.length-1);canvas.dataset.samples=String(Math.floor(progress*(hero.paths.sgd.length-1))*hero.batch);
 }
 function heroLoop(ts){
   heroRAF=0;if(heroPaused||!heroVisible||document.hidden)return;
@@ -191,7 +193,7 @@ new IntersectionObserver(entries=>{heroVisible=entries[0].isIntersecting;syncHer
 reducedMotion.addEventListener('change',e=>{if(e.matches){heroPaused=true;heroTime=hero.duration;updateHeroMotion();syncHeroPlayback();drawHero(heroTime);}});
 document.fonts.ready.then(()=>{heroBackdrop.key='';drawHero(heroTime);simLayer.key='';simDetail.painted='';renderSim();});
 
-const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:2,progress:0,playing:false,paths:{},tuned:{},last:0};
+const sim={batch:1,sharp:20,noise:8,start:[1,1],seed:7,speed:2,duration:60000,progress:0,playing:false,paths:{},tuned:{},last:0};
 let simRAF=0,simConfigRAF=0,simVisible=true;
 const simLayer={canvas:document.createElement('canvas'),key:'',paths:null,end:-1,painted:-1,
   trails:{sgd:document.createElement('canvas'),newton:document.createElement('canvas')},history:{}};
@@ -202,12 +204,13 @@ function configureSimulation(){
   cancelAnimationFrame(simConfigRAF);simConfigRAF=0;
   sim.batch=2**+$('sim-batch').value;sim.sharp=+$('sim-sharp').value;sim.noise=+$('sim-noise').value;sim.progress=0;sim.playing=false;sim.last=0;cancelAnimationFrame(simRAF);
   sim.tuned=tunedMethods(sim);sim.paths={};
-  ['sgd','newton'].forEach(m=>{sim.paths[m]=NQM.trajectory(sim,m,sim.tuned[m].eta,sim.seed);});
+  const steps=NQM.settlingSteps(sim,sim.tuned);
+  ['sgd','newton'].forEach(m=>{sim.paths[m]=NQM.trajectory(sim,m,sim.tuned[m].eta,sim.seed,steps);});
   const maxLoss=Math.max(.5*(sim.start[0]**2+sim.sharp*sim.start[1]**2),...Object.values(sim.paths).map(ps=>Math.max(...ps.map(p=>p.loss))),1e-2);
   sim.lossBounds={ymax:Math.ceil(Math.log10(maxLoss)),ymin:Math.min(-4,Math.floor(Math.log10(Math.max(Math.min(sim.tuned.sgd.total,sim.tuned.newton.total),1e-6)))-1)};
   syncSimPlayback();
-  $('sim-batch-output').textContent=fmt(sim.batch);$('sim-sharp-output').textContent=sim.sharp+'×';$('sim-noise-output').textContent=sim.noise;$('sim-updates').textContent=fmt(NQM.T/sim.batch);$('sim-seed').textContent='SEED '+sim.seed;
-  $('sim-batch').setAttribute('aria-valuetext',`${sim.batch} samples per batch; ${NQM.T/sim.batch} updates`);
+  $('sim-batch-output').textContent=fmt(sim.batch);$('sim-sharp-output').textContent=sim.sharp+'×';$('sim-noise-output').textContent=sim.noise;$('sim-updates').textContent=fmt(steps);$('sim-seed').textContent='SEED '+sim.seed;
+  $('sim-batch').setAttribute('aria-valuetext',`${sim.batch} samples per batch; ${steps} trajectory updates`);
   $('preset-small').classList.toggle('active',sim.batch===1);$('preset-large').classList.toggle('active',sim.batch===256);
   for(const [id,b] of [['preset-small',1],['preset-large',256]])$(id).setAttribute('aria-pressed',String(sim.batch===b));
   renderRisk();renderSim();
@@ -226,7 +229,7 @@ function renderLandscape(){
   const camera=SimulationCamera.sample(simCamera.prepared,simCamera.view,sim.progress,simCamera.mode);
   const scale=camera.base,cx=camera.cx,cy=camera.cy;
   const X=x=>cx+x*scale,Y=y=>cy-y*scale;
-  const end=Math.min(NQM.T/sim.batch,Math.floor(sim.progress*NQM.T/sim.batch));
+  const position=sim.progress*(sim.paths.sgd.length-1),end=Math.floor(position);
   const key=`${w}:${h}:${dpr}:${sim.sharp}:${scale}:${document.documentElement.dataset.theme}`;
   if(simLayer.key!==key){
     simLayer.key=key;simLayer.paths=null;
@@ -245,7 +248,7 @@ function renderLandscape(){
     simLayer.history=Object.fromEntries(['sgd','newton'].map(m=>{const path=new Path2D();path.moveTo(...sim.paths[m][0].w);return [m,path];}));
     Object.values(simLayer.trails).forEach(canvas=>{canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.getContext('2d').setTransform(dpr,0,0,dpr,0,0);});
   }
-  const frameKey=`${key}:${camera.scale}:${end}:${simCamera.mode}`;
+  const frameKey=`${key}:${camera.scale}:${position}:${simCamera.mode}`;
   if(end===simLayer.painted&&frameKey===simDetail.painted)return {scale:camera.scale,cx,cy};
   ['sgd','newton'].forEach(m=>{
     const trail=simLayer.trails[m].getContext('2d'),pts=sim.paths[m];
@@ -283,7 +286,9 @@ function renderLandscape(){
       ctx.globalAlpha=.2+.23*band;ctx.strokeStyle=colors[m];ctx.lineWidth=2.2;ctx.stroke();
     }
     ctx.globalAlpha=1;
-    const p=sim.paths[m][end].w;ctx.beginPath();ctx.arc(detailX(p[0]),detailY(p[1]),5,0,2*Math.PI);ctx.fillStyle=colors[m];ctx.fill();ctx.strokeStyle=simLayer.palette.surface;ctx.lineWidth=1.5;ctx.stroke();
+    const current=sim.paths[m][end].w,next=sim.paths[m][Math.min(end+1,sim.paths[m].length-1)].w;
+    const p=current.map((v,i)=>v+(next[i]-v)*(position-end));
+    ctx.beginPath();ctx.arc(detailX(p[0]),detailY(p[1]),5,0,2*Math.PI);ctx.fillStyle=colors[m];ctx.fill();ctx.strokeStyle=simLayer.palette.surface;ctx.lineWidth=1.5;ctx.stroke();
   });
   if(camera.from===0){ctx.beginPath();ctx.arc(detailX(sim.start[0]),detailY(sim.start[1]),5.5,0,2*Math.PI);ctx.strokeStyle=simLayer.palette.ink;ctx.lineWidth=1;ctx.stroke();ctx.font='11px "Essay Sans",sans-serif';ctx.fillStyle=simLayer.palette.muted;ctx.fillText('start',detailX(sim.start[0])+9,detailY(sim.start[1])-9);}
   ctx.beginPath();ctx.arc(cx,cy,2.5,0,2*Math.PI);ctx.fillStyle=simLayer.palette.ink;ctx.fill();ctx.fillStyle=simLayer.palette.muted;ctx.font='12px "Essay Sans",sans-serif';ctx.fillText('minimum',cx+8,simCamera.mode==='auto'?cy-10:cy+15);ctx.restore();
@@ -342,9 +347,10 @@ function renderLoss(){
   if(simLoss.key!==key||simLoss.paths!==sim.paths){
     simLoss.key=key;simLoss.paths=sim.paths;simLoss.end=-1;
     chart.setAttribute('viewBox',`0 0 ${width} 170`);
-    const f=frame(width,170,{l:43,r:12,t:12,b:28}),x=s=>f.l+s/NQM.T*f.iw;
-    const a=axes(f,ymin,ymax,[[0,'0'],[2048,'2,048'],[4096,'4,096 samples']],x,{dark:true,format:v=>scientificSVG(10**v)});
-    chart.innerHTML=a.svg+['sgd','newton'].map(m=>`<path id="sim-loss-${m}" fill="none" stroke="${colors[m]}" stroke-width="1.6"/>`).join('');
+    const samples=sim.paths.sgd.at(-1).samples;
+    const f=frame(width,170,{l:43,r:12,t:12,b:28}),x=s=>f.l+s/samples*f.iw;
+    const a=axes(f,ymin,ymax,[[0,'0'],[samples/2,fmt(samples/2)],[samples,fmt(samples)+' samples']],x,{dark:true,format:v=>scientificSVG(10**v)});
+    chart.innerHTML=a.svg+`<line class="comparison-budget" x1="${x(NQM.T)}" x2="${x(NQM.T)}" y1="${f.t}" y2="${f.h-f.b}" stroke="${token('--muted')}" stroke-dasharray="3 4" opacity=".7"/>`+svgText(x(NQM.T)+5,f.t+11,'4K','font-size="10"')+['sgd','newton'].map(m=>`<path id="sim-loss-${m}" fill="none" stroke="${colors[m]}" stroke-width="1.6"/>`).join('');
     ['sgd','newton'].forEach(m=>{
       const pts=sim.paths[m],stride=Math.max(1,Math.ceil((pts.length-1)/350));
       const coordinates=pts.map(p=>`${x(p.samples).toFixed(2)},${a.y(Math.max(ymin,Math.log10(Math.max(p.loss,1e-15)))).toFixed(2)}`);
@@ -364,14 +370,15 @@ function renderLoss(){
 }
 function renderSim(){
   renderLandscape();renderLoss();
-  const samples=Math.floor(sim.progress*NQM.T/sim.batch)*sim.batch;
-  const progress=`${fmt(samples)} / 4,096 samples`,label=sim.playing?'Pause':sim.progress>=1?'Replay':'Run experiment',icon=sim.playing?'Ⅱ':sim.progress>=1?'↻':'▶';
+  const steps=sim.paths.sgd.length-1,samples=Math.floor(sim.progress*steps)*sim.batch,total=steps*sim.batch;
+  const progress=`${fmt(samples)} / ${fmt(total)} samples`,label=sim.playing?'Pause':sim.progress>=1?'Replay':'Run experiment',icon=sim.playing?'Ⅱ':sim.progress>=1?'↻':'▶';
+  $('landscape').dataset.steps=String(steps);$('landscape').dataset.samples=String(samples);
   if($('sim-progress').textContent!==progress)$('sim-progress').textContent=progress;
   $('sim-progress-bar').style.width=(sim.progress*100)+'%';
   if($('sim-play-label').textContent!==label)$('sim-play-label').textContent=label;
   if($('sim-play-icon').textContent!==icon)$('sim-play-icon').textContent=icon;
 }
-function tickSim(ts){simRAF=0;if(!sim.playing||!simVisible||document.hidden)return;if(sim.last)sim.progress=Math.min(1,sim.progress+Math.min(ts-sim.last,60)*sim.speed/5500);sim.last=ts;if(sim.progress>=1)sim.playing=false;renderSim();if(sim.playing)simRAF=requestAnimationFrame(tickSim);else syncSimPlayback();}
+function tickSim(ts){simRAF=0;if(!sim.playing||!simVisible||document.hidden)return;if(sim.last)sim.progress=Math.min(1,sim.progress+Math.min(ts-sim.last,60)*sim.speed/sim.duration);sim.last=ts;if(sim.progress>=1)sim.playing=false;renderSim();if(sim.playing)simRAF=requestAnimationFrame(tickSim);else syncSimPlayback();}
 function syncSimPlayback(){
   const running=sim.playing&&simVisible&&!document.hidden;$('landscape').dataset.animating=String(running);
   if(!running){cancelAnimationFrame(simRAF);simRAF=0;sim.last=0;}
