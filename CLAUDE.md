@@ -184,3 +184,7 @@ changes, also inspect desktop and narrow layouts, background-tab loading, and
 reduced-motion behavior. Check the biography, publication summary bands, link
 arrows, and tracing-beam gutter after layout changes. For deployment changes,
 follow the route and release checks in `DEPLOYMENT.md`.
+
+## Standalone batch-size article
+
+The batch-size research blog is maintained in `../batch-size-blog` and deployed at `https://dangxingyu.github.io/batch-size-blog/`. This repository only owns its blog-list `url` metadata and the old `/blog/batch-size.html` redirect. Do not reintroduce its assets, simulations, or numerical checks here. `BlogPost.url` supports independently hosted articles; other posts retain their local HTML routes.

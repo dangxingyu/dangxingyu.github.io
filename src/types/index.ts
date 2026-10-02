@@ -34,6 +34,7 @@ export interface Talk {
 }
 
 export interface BlogPost {
+  url?: string;
   id: string;
   title: string;
   slug: string;

@@ -39,14 +39,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Check blog mathematics and worker cancellation
-        run: node scripts/check-batch-playable.mjs
-
-      - name: Check scaling-rule measurements and plot ranges
-        run: |
-          node scripts/check-scaling-rule-data.mjs
-          node scripts/check-scaling-rule-view.mjs
-        
       - name: Build
         run: pnpm run build
         

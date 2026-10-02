@@ -1,11 +1,12 @@
 import { BlogPost } from '../types';
 
-// Blog posts metadata (HTML files are in public/blog/)
+// Blog metadata: local HTML posts or independently hosted articles.
 const blogPostsData: BlogPost[] = [
   {
     id: 'batch-size',
     title: 'The Best Optimizer Depends on Batch Size',
     slug: 'batch-size',
+    url: 'https://dangxingyu.github.io/batch-size-blog/',
     excerpt: 'A paper you can play with. Change the batch size, race optimizers through a noisy landscape, and explore why a tiny set of sharp directions can change the result.',
     content: '',
     publishedAt: '2026-09-29',
@@ -27,7 +28,7 @@ const blogPostsData: BlogPost[] = [
 // Get all blog posts
 export const getBlogPosts = (): BlogPost[] => {
   // Return pre-defined blog posts metadata
-  // HTML files are served directly from public/blog/
+  // Entries may point to local HTML or a standalone research site.
   return [...blogPostsData].sort((a, b) =>
     new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   );

@@ -31,9 +31,8 @@ function PostRow({
 
       <div>
         <h2 className="max-w-[46ch] font-display text-[1.5rem] leading-snug text-ink transition-colors duration-500 ease-out group-hover:text-accent">
-          {/* Posts are pre-rendered standalone HTML in public/blog/, so this is
-              a real document navigation rather than a router link. */}
-          <a href={`/blog/${post.slug}.html`}>
+          {/* Articles use document navigation, including independently hosted posts. */}
+          <a href={post.url ?? `/blog/${post.slug}.html`}>
             <span className="absolute inset-0" aria-hidden="true" />
             {post.title}
           </a>
