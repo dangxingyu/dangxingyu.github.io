@@ -36,7 +36,7 @@ pnpm run dev
 | 博客元数据 | `src/lib/blogLoader.ts` 中的 `blogPostsData` |
 | 内容类型 | `src/types/index.ts` |
 
-论文和报告按数据数组中的顺序显示，维护时将新条目放在前面。新增本地博客需要同时添加 HTML 正文、列表元数据和 `public/sitemap.xml` 中的 URL。独立部署的博客在元数据中设置 `url`。Batch-size 博客维护在 [独立仓库](https://github.com/dangxingyu/batch-size-blog)，本仓库仅保留列表链接和旧地址的跳转。
+论文和报告按数据数组中的顺序显示，维护时将新条目放在前面。新增本地博客需要同时添加 HTML 正文、列表元数据和 `public/sitemap.xml` 中的 URL。独立部署的博客在元数据中设置 `url`。Batch-size 博客维护在 [独立仓库](https://github.com/dangxingyu/batch-size-blog)，这篇文章暂不显示在主页博客列表中，本仓库保留旧地址的跳转。
 
 `src/components/layout/` 提供共用布局和固定导航。`RichText.tsx` 只处理简介中的段落与 `[label](href)` 链接，不是完整 Markdown 渲染器。
 
