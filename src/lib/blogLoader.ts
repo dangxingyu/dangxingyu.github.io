@@ -3,6 +3,17 @@ import { BlogPost } from '../types';
 // Blog metadata: local HTML posts or independently hosted articles.
 const blogPostsData: BlogPost[] = [
   {
+    id: 'batch-size',
+    title: 'The Best Optimizer Depends on Batch Size',
+    slug: 'batch-size',
+    url: 'https://batch-size-scaling.com/',
+    excerpt: 'A paper you can play with. Change the batch size, race optimizers through a noisy landscape, and explore why a tiny set of sharp directions can change the result.',
+    content: '',
+    publishedAt: '2026-09-29',
+    tags: ['Optimization', 'Batch Size', 'Interactive', 'Language Models'],
+    readingTime: 12,
+  },
+  {
     id: 'rlvr-ttlm',
     title: 'RLVR is Time-Traveling',
     slug: 'rlvr-ttlm',
