@@ -30,7 +30,8 @@ export const publications: Publication[] = [
     year: 2026,
     type: "conference",
     pdf: "https://arxiv.org/abs/2608.01672",
-    summary: "context distillation as a test-time objective"
+    summary: "context distillation as a test-time objective",
+    thumbnail: "/covers/pub-context-distillation.webp"
   },
   {
     id: "5",
@@ -40,7 +41,8 @@ export const publications: Publication[] = [
     year: 2026,
     type: "preprint",
     pdf: "https://arxiv.org/abs/2606.16899",
-    summary: "weight-normalized training"
+    summary: "weight-normalized training",
+    thumbnail: "/covers/pub-hyperball.webp"
   },
   {
     id: "4",
@@ -55,7 +57,8 @@ export const publications: Publication[] = [
     year: 2026,
     type: "conference",
     pdf: "https://arxiv.org/abs/2604.22951",
-    summary: "why power-law data beats uniformly reweighted data for compositional reasoning"
+    summary: "why power-law data beats uniformly reweighted data for compositional reasoning",
+    thumbnail: "/covers/pub-power-law.webp"
   },
   {
     id: "3",
@@ -66,7 +69,8 @@ export const publications: Publication[] = [
     year: 2026,
     type: "conference",
     pdf: "https://arxiv.org/abs/2602.16793",
-    summary: "SOTA IMO problem solver scaffolding"
+    summary: "SOTA IMO problem solver scaffolding",
+    thumbnail: "/covers/pub-cognitive-well.webp"
   },
   {
     id: "1",
@@ -76,7 +80,8 @@ export const publications: Publication[] = [
     year: 2025,
     type: "conference",
     pdf: "https://arxiv.org/abs/2504.10478",
-    summary: "why increasing top-1 hurts top-k on SFT & RL, and how to fix it"
+    summary: "why increasing top-1 hurts top-k on SFT & RL, and how to fix it",
+    thumbnail: "/covers/pub-weight-ensembling.webp"
   },
   {
     id: "2",
@@ -86,7 +91,8 @@ export const publications: Publication[] = [
     year: 2024,
     type: "conference",
     pdf: "https://arxiv.org/abs/2402.18510",
-    summary: "representation gap between RNNs and Transformers (both with CoT!)"
+    summary: "representation gap between RNNs and Transformers (both with CoT!)",
+    thumbnail: "/covers/pub-rnn-transformer.webp"
   }
 ];
 

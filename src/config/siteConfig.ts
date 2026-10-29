@@ -7,6 +7,7 @@ export interface SiteConfig {
   sections: {
     hero: boolean;
     researchInterests: boolean;
+    writing: boolean;
     publications: boolean;
     talks: boolean;
   };
@@ -16,6 +17,7 @@ export const siteConfig: SiteConfig = {
   sections: {
     hero: true,
     researchInterests: true,
+    writing: true,
     publications: true,
     talks: true,
   }

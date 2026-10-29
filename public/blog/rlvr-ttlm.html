@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RLVR is Time-Traveling</title>
+    <meta name="description" content="Connecting RLVR to Time-Traveling Turing Machines: a one-bit signal from the future leads to the same equations that govern KL-regularized RLVR.">
+    <link rel="canonical" href="https://dangxingyu.github.io/blog/rlvr-ttlm.html">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Xingyu Dang">
+    <meta property="og:title" content="RLVR is Time-Traveling">
+    <meta property="og:description" content="Connecting RLVR to Time-Traveling Turing Machines: a one-bit signal from the future leads to the same equations that govern KL-regularized RLVR.">
+    <meta property="og:url" content="https://dangxingyu.github.io/blog/rlvr-ttlm.html">
+    <meta property="og:image" content="https://dangxingyu.github.io/covers/og-rlvr-ttlm.jpg">
+    <meta property="article:published_time" content="2025-11-08">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:creator" content="@xingyudang">
+    <meta name="twitter:image" content="https://dangxingyu.github.io/covers/og-rlvr-ttlm.jpg">
 
     <!-- KaTeX CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
@@ -60,6 +72,19 @@
             padding: 8px 12px;
             border-radius: 4px;
             transition: all 0.2s ease;
+        }
+
+        /* Ink-wash cover, shared with the blog index card. */
+        .post-cover {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 4px;
+            box-shadow: 0 0 0 1px #E3DDD2;
+            margin: 0 0 8px;
+            position: relative;
         }
 
         .back-button:hover {
@@ -211,6 +236,7 @@
     </svg>
     Back to all posts
 </a>
+<img class="post-cover" src="/covers/blog-rlvr-ttlm.webp" alt="" width="1600" height="900">
 <h1>RLVR is Time-Traveling</h1>
 <p><em>Posted on Nov 8, 2025 by Xingyu Dang</em></p>
 <p>Reinforcement Learning with Verifiable Rewards (RLVR) has driven many recent successes in reasoning models—from mathematical problem solving to code synthesis. In this blog, we’ll connect RLVR to the modeling of <strong>Time-Traveling Turing Machines (TTTMs)</strong>. We’ll see that a “one-bit signal from the future” leads, mathematically, to the same equations that govern KL-regularized RLVR.<br />

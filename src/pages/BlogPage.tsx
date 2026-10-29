@@ -1,61 +1,5 @@
 import { getBlogPosts } from '../lib/blogLoader';
-
-function PostRow({
-  post,
-  index,
-}: {
-  post: ReturnType<typeof getBlogPosts>[0];
-  index: number;
-}) {
-  // Build the date from explicit local components. `new Date('2025-11-08')`
-  // parses as UTC midnight, which formats as the previous day in any timezone
-  // behind UTC — the post dated 2025-11-08 rendered as "November 7, 2025".
-  const [y, m, d] = post.publishedAt.split('-').map(Number);
-  const formattedDate = new Date(y, m - 1, d).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-
-  return (
-    <div className="reveal">
-    <article className="group relative grid grid-cols-1 gap-x-10 border-t border-rule py-10 sm:grid-cols-[9rem_1fr]">
-      <div className="mb-3 sm:mb-0">
-        <time
-          dateTime={post.publishedAt}
-          className="text-micro uppercase text-ink-faint transition-colors duration-500 ease-out group-hover:text-accent"
-        >
-          {formattedDate}
-        </time>
-      </div>
-
-      <div>
-        <h2 className="max-w-[46ch] font-display text-[1.5rem] leading-snug text-ink transition-colors duration-500 ease-out group-hover:text-accent">
-          {/* Articles use document navigation, including independently hosted posts. */}
-          <a href={post.url ?? `/blog/${post.slug}.html`}>
-            <span className="absolute inset-0" aria-hidden="true" />
-            {post.title}
-          </a>
-        </h2>
-
-        <p className="mt-4 max-w-measure text-[0.9375rem] leading-[1.75] text-ink-muted">
-          {post.excerpt}
-        </p>
-
-        <div className="mt-5 flex items-baseline gap-6 text-[0.875rem] text-ink-faint">
-          <span>{post.readingTime} min read</span>
-          <span className="inline-flex items-baseline gap-2 transition-colors duration-500 ease-out group-hover:text-accent">
-            Read
-            <span className="inline-block transition-transform duration-500 ease-out group-hover:translate-x-1.5">
-              &rarr;
-            </span>
-          </span>
-        </div>
-      </div>
-    </article>
-    </div>
-  );
-}
+import { PostCard } from '../components/PostCard';
 
 export function BlogPage() {
   const posts = getBlogPosts();
@@ -69,9 +13,11 @@ export function BlogPage() {
       </div>
 
       {posts.length > 0 ? (
-        <div className="mt-16">
-          {posts.map((post, i) => (
-            <PostRow key={post.id} post={post} index={i} />
+        <div className="mt-16 grid grid-cols-1 gap-x-12 gap-y-16 border-t border-rule pt-12 md:grid-cols-2">
+          {posts.map((post) => (
+            <div key={post.id} className="reveal">
+              <PostCard post={post} />
+            </div>
           ))}
         </div>
       ) : (
