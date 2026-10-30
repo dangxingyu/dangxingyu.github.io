@@ -22,6 +22,16 @@ export const personalInfo: PersonalInfo = {
 
 export const publications: Publication[] = [
   {
+    id: "7",
+    title: "The Best Optimizer Depends on Batch Size",
+    authors: ["Xingyu Dang*", "Kaiyue Wen*", "Sadhika Malladi"],
+    venue: "arXiv preprint",
+    year: 2026,
+    type: "preprint",
+    pdf: "https://arxiv.org/abs/2610.08975",
+    summary: "optimizer rankings can reverse with batch size, even after retuning"
+  },
+  {
     id: "6",
     title: "Learning What to Remember: Test-Time Training via Context Distillation",
     authors: ["Zixuan Wang*", "Xingyu Dang*", "Rui-Jie Zhu", "Zixin Wen", "Hengyu Fu", "Wenhao Chai", "Jason D. Lee"],
