@@ -7,7 +7,7 @@ const blogPostsData: BlogPost[] = [
     title: 'The Best Optimizer Depends on Batch Size',
     slug: 'batch-size',
     url: 'https://batch-size-scaling.com/',
-    excerpt: 'A paper you can play with. Change the batch size, race optimizers through a noisy landscape, and explore why a tiny set of sharp directions can change the result.',
+    excerpt: 'Optimizer rankings can reverse as batch size changes, even after retuning every optimizer at every batch size. In language-model pretraining, keeping small-batch updates in the sharpest 0.001% of matrix directions removes up to 59.5% of the error from scaling the batch size.',
     content: '',
     publishedAt: '2026-09-29',
     tags: ['Optimization', 'Batch Size', 'Interactive', 'Language Models'],

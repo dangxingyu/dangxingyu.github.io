@@ -36,7 +36,7 @@ Layout and fixed Header.
 
 | Route | Implementation |
 | --- | --- |
-| `/` | `src/pages/IntroPage.tsx`: hero, research interests, writing (latest two posts as cover cards), selected publications, talks, footer |
+| `/` | `src/pages/IntroPage.tsx`: hero, research interests, selected publications, talks, footer |
 | `/blog` | `src/pages/BlogPage.tsx`: post index as a two-column grid of cover cards, sorted newest first |
 | `*` | Redirects to `/` |
 
@@ -57,10 +57,10 @@ keep Vite's `base: '/'` and the 404 shim's `pathSegmentsToKeep = 0` aligned.
 - `src/lib/blogLoader.ts`: manually maintained `blogPostsData`; this does not
   discover or parse the HTML files. It also exports `formatPostDate` and
   `postHref`, shared by every place a post is listed.
-- `src/components/PostCard.tsx`: the one blog card (cover, date, title,
-  excerpt, tags), used by both `/blog` and the homepage Writing section.
-- `src/config/siteConfig.ts`: `hero`, `researchInterests`, `writing`,
-  `publications`, and `talks` section flags. Every flag must be wired into `IntroPage.tsx`.
+- `src/components/PostCard.tsx`: the blog card on `/blog` (cover, date,
+  title, excerpt, tags).
+- `src/config/siteConfig.ts`: `hero`, `researchInterests`, `publications`, and
+  `talks` section flags. Every flag must be wired into `IntroPage.tsx`.
 - The footer is always rendered. Talks are also hidden when the array is empty.
 - The footer's `__BUILD_DATE__` is formatted and injected by Vite at build time;
   it is not the last Git commit date.
@@ -94,24 +94,22 @@ Keep component dimensions authored at their normal size; do not apply another
 
 Publication and talk rows use SpotlightCard. Publications use a compact
 single-column list at every screen size.
-Each publication row has a 16:9 ink-wash thumbnail column (`.pub-thumb`), then
-the year, condensed metadata, and a smaller neutral summary band. Talks keep the
-narrow year column. The summary band has a left-only bleed so the card's
+Each row keeps a narrow year column, condensed metadata, and a smaller neutral
+summary band. The summary band has a left-only bleed so the card's
 `overflow-hidden` does not clip the right edge or link arrow.
 Presentation and award labels use the light accent wash with rust text, keeping
 them visible without competing with the publication titles.
 
 ### Ink-wash covers
 
-Blog covers and publication thumbnails are generated ink-wash images (the
-"笔墨" series: paper texture, graded ink, dry-brush streaks, a red seal), stored
-as WebP in `public/covers/`: blog covers at 1600x900, publication thumbnails at
-800x450, plus a 1200x630 JPEG per article for `og:image`. `.ink-cover` and
-`.pub-thumb` in `src/index.css` give both the same hairline ring and hover
-scale. The images are decorative (`alt=""`); titles carry the link names.
-Current assignments: batch-size 远山, RLVR 圆相; publications in list order 水纹,
-月夜, 米点云山, 泼墨, 飞白, 墨梅. Keep new covers in the same series so the
-listings stay visually consistent.
+Blog posts, and only blog posts, carry generated ink-wash covers (the "笔墨"
+series: paper texture, graded ink, dry-brush streaks, a red seal). Covers are
+WebP at 1600x900 in `public/covers/`, plus a 1200x630 JPEG per local article
+for `og:image`. The homepage and publication list have no images besides the
+portrait; do not add covers or thumbnails there. `.ink-cover` in
+`src/index.css` gives the cards a hairline ring and hover scale. Covers are
+decorative (`alt=""`); titles carry the link names. Current assignments:
+batch-size 远山, RLVR 圆相. Keep new covers in the same series.
 
 ### Motion and interaction
 
@@ -161,7 +159,7 @@ copy; preserve the fixes described above and in component comments.
 ## Adding content
 
 **Publication:** add to `publications` in `src/data/content.ts`, newest first;
-the array is rendered in its authored order. Include a short `summary` and a `thumbnail` (`/covers/pub-<name>.webp`, 800x450). The
+the array is rendered in its authored order. Include a short `summary`. The
 `pdf` field is currently used for arXiv URLs, and the UI labels it `arXiv`.
 If adding other link destinations, update that label logic too. Preserve
 equal-contribution asterisks exactly as on the paper; `Authors` strips them

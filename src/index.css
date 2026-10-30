@@ -276,26 +276,20 @@
     @apply bg-ink/[0.055];
   }
 
-  /* Ink-wash images: blog covers and publication teasers. A hairline ring
-     rather than a shadow, so the paper of the image meets the paper of the
-     page; the image eases up slightly when its row or card is hovered. */
-  .ink-cover,
-  .pub-thumb {
+  /* Ink-wash blog covers. A hairline ring rather than a shadow, so the paper
+     of the image meets the paper of the page; the image eases up slightly
+     when its card is hovered. */
+  .ink-cover {
     @apply relative overflow-hidden rounded-[3px] bg-paper-sunk;
     aspect-ratio: 16 / 9;
     box-shadow: inset 0 0 0 1px theme('colors.rule.DEFAULT');
   }
-  .ink-cover img,
-  .pub-thumb img {
+  .ink-cover img {
     @apply block h-full w-full object-cover;
     transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .group:hover .ink-cover img,
-  .group:hover .pub-thumb img {
+  .group:hover .ink-cover img {
     transform: scale(1.035);
-  }
-  .pub-thumb {
-    @apply max-w-[22rem] sm:max-w-none;
   }
 
   .pub-summary {

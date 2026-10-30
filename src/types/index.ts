@@ -17,8 +17,6 @@ export interface Publication {
   pdf?: string;
   /** One line, in the author's own voice — not the paper abstract. */
   summary?: string;
-  /** 16:9 ink-wash teaser shown beside the entry, served from public/covers/. */
-  thumbnail?: string;
 }
 
 export interface Talk {

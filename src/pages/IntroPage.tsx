@@ -1,5 +1,4 @@
 import { ReactNode, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { personalInfo, publications, talks } from '../data/content';
 import { siteConfig } from '../config/siteConfig';
 import { RichText } from '../components/RichText';
@@ -10,8 +9,6 @@ import SpotlightCard from '../components/SpotlightCard';
 import { TiltCard } from '../components/TiltCard';
 import ScrollReveal from '../components/ScrollReveal';
 import ShinyText from '../components/ShinyText';
-import { PostCard } from '../components/PostCard';
-import { getBlogPosts } from '../lib/blogLoader';
 
 /**
  * The bio's first paragraph carries the advisor links and must stay real
@@ -208,35 +205,6 @@ function ResearchInterests() {
   );
 }
 
-/** Latest posts as ink-cover cards; the full index lives at /blog. */
-function Writing() {
-  const posts = getBlogPosts().slice(0, 2);
-  if (!siteConfig.sections.writing || posts.length === 0) return null;
-
-  return (
-    <section className="mx-auto max-w-page px-6 pt-section sm:px-10 lg:px-16">
-      <Reveal>
-        <div className="flex flex-wrap items-baseline justify-between gap-4">
-          <h2 className="font-display text-display-md font-medium text-ink">
-            <ShinyText text="Writing" className="text-ink" speed={3.2} delay={4} />
-          </h2>
-          <Link to="/blog" className="link-rule text-[0.9375rem]">
-            All posts <span aria-hidden="true">&rarr;</span>
-          </Link>
-        </div>
-      </Reveal>
-
-      <div className="mt-10 grid grid-cols-1 gap-x-12 gap-y-14 md:grid-cols-2">
-        {posts.map((post) => (
-          <Reveal key={post.id}>
-            <PostCard post={post} headingLevel="h3" />
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 /** Author list with the site owner set in ink and everyone else muted. */
 function Authors({ authors }: { authors: string[] }) {
   return (
@@ -273,21 +241,15 @@ function Publications() {
                 className="border-t border-rule"
                 spotlightColor="rgba(138, 51, 36, 0.13)"
               >
-              <article className="group relative grid min-w-0 grid-cols-1 gap-x-7 gap-y-4 py-5 sm:grid-cols-[13rem_1fr]">
-                {/* Ink-wash teaser. Decorative, so it is hidden from assistive
-                    tech; an entry without one keeps an empty paper tile so the
-                    text column stays aligned. */}
-                <div className="pub-thumb" aria-hidden="true">
-                  {pub.thumbnail && (
-                    <img src={pub.thumbnail} alt="" width={800} height={450} loading="lazy" decoding="async" />
-                  )}
-                </div>
-
-                <div className="min-w-0">
+              <article className="group relative grid min-w-0 grid-cols-1 gap-x-6 py-4 sm:grid-cols-[3.75rem_1fr]">
+                <div className="mb-2 sm:mb-0">
                   <span className="text-micro uppercase text-ink-faint transition-colors duration-500 ease-out group-hover:text-accent">
                     {pub.year}
                   </span>
-                  <h3 className="mt-1 max-w-[52ch] text-title text-ink transition-colors duration-500 ease-out group-hover:text-accent">
+                </div>
+
+                <div>
+                  <h3 className="max-w-[52ch] text-title text-ink transition-colors duration-500 ease-out group-hover:text-accent">
                     {pub.pdf ? (
                       <a href={pub.pdf} target="_blank" rel="noopener noreferrer">
                         <span className="absolute inset-0" aria-hidden="true" />
@@ -433,7 +395,6 @@ export function IntroPage() {
     <>
       {siteConfig.sections.hero && <Hero />}
       <ResearchInterests />
-      <Writing />
       <Publications />
       <Talks />
       <Footer />
