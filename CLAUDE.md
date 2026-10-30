@@ -36,7 +36,7 @@ Layout and fixed Header.
 
 | Route | Implementation |
 | --- | --- |
-| `/` | `src/pages/IntroPage.tsx`: hero, research interests, selected publications, talks, footer |
+| `/` | `src/pages/IntroPage.tsx`: hero, research interests, blog (latest three posts as text rows, no covers), selected publications, talks, footer |
 | `/blog` | `src/pages/BlogPage.tsx`: post index as a two-column grid of cover cards, sorted newest first |
 | `*` | Redirects to `/` |
 
@@ -59,8 +59,8 @@ keep Vite's `base: '/'` and the 404 shim's `pathSegmentsToKeep = 0` aligned.
   `postHref`, shared by every place a post is listed.
 - `src/components/PostCard.tsx`: the blog card on `/blog` (cover, date,
   title, excerpt, tags).
-- `src/config/siteConfig.ts`: `hero`, `researchInterests`, `publications`, and
-  `talks` section flags. Every flag must be wired into `IntroPage.tsx`.
+- `src/config/siteConfig.ts`: `hero`, `researchInterests`, `blog`,
+  `publications`, and `talks` section flags. Every flag must be wired into `IntroPage.tsx`.
 - The footer is always rendered. Talks are also hidden when the array is empty.
 - The footer's `__BUILD_DATE__` is formatted and injected by Vite at build time;
   it is not the last Git commit date.
@@ -102,8 +102,10 @@ them visible without competing with the publication titles.
 
 ### Ink-wash covers
 
-Blog posts, and only blog posts, carry generated ink-wash covers (the "笔墨"
-series: paper texture, graded ink, dry-brush streaks, a red seal). Covers are
+The homepage Blog section lists posts as plain rows in the publication style,
+using each post's one-line `summary` (falling back to `excerpt`). Blog posts
+carry generated ink-wash covers (the "笔墨" series: paper texture, graded ink,
+dry-brush streaks, a red seal) on `/blog` and in articles only. Covers are
 WebP at 1600x900 in `public/covers/`, plus a 1200x630 JPEG per local article
 for `og:image`. The homepage and publication list have no images besides the
 portrait; do not add covers or thumbnails there. `.ink-cover` in

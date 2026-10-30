@@ -29,7 +29,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-page items-baseline justify-between px-6 sm:px-10 lg:px-16">
         <Link
           to="/"
-          className="group font-display text-[1.0625rem] tracking-[-0.01em] text-ink transition-colors duration-300 ease-out hover:text-accent"
+          className="group font-display text-[1.375rem] tracking-[-0.01em] text-ink transition-colors duration-300 ease-out hover:text-accent"
         >
           Xingyu Dang
           {/* Fraunces carries no CJK glyphs, so the Chinese name needs its own
@@ -52,7 +52,7 @@ export function Header() {
                 key={item.name}
                 to={item.href}
                 aria-current={isActive ? 'page' : undefined}
-                className={`relative pb-1 font-display text-[0.9375rem] transition-colors duration-300 ease-out ${
+                className={`relative pb-1 font-display text-[1.25rem] transition-colors duration-300 ease-out ${
                   isActive ? 'text-ink' : 'text-ink-faint hover:text-ink'
                 }`}
               >

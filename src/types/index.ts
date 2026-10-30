@@ -46,6 +46,8 @@ export interface BlogPost {
   readingTime: number;
   /** 16:9 ink-wash cover image, served from public/covers/. */
   cover?: string;
+  /** One line for the homepage Blog section, like a publication summary. */
+  summary?: string;
 }
 
 export interface PersonalInfo {
