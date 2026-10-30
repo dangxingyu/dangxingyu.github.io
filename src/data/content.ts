@@ -3,7 +3,7 @@ import { PersonalInfo, Publication, Talk } from '../types';
 export const personalInfo: PersonalInfo = {
   name: "Xingyu Dang",
   title: "PhD Student at Princeton University",
-  bio: "Hi! I am Xingyu Dang, a second-year PhD student at CS department of Princeton University, working with [Prof. Sanjeev Arora](https://www.cs.princeton.edu/~arora/). I graduated from Yao Class, Tsinghua University. During my undergraduate study, I was fortunate to work under the guidance of [Prof. Aditi Raghunathan](https://www.cs.cmu.edu/~aditirag/), [Prof. Kaifeng Lyu](https://kaifeng.ac/) and [Prof. Yang Yuan](http://people.iiis.tsinghua.edu.cn/~yuanyang/en.html). \n\n My research interests lie in large language models: how pretraining scales, how capabilities such as reasoning emerge, and how algorithms can make efficient use of them.\n\nPreviously, I interned at ByteDance Seed, building pretraining scaling ladders for norm-preserved training.",
+  bio: "Hi! I am Xingyu Dang, a second-year PhD student at CS department of Princeton University, working with [Prof. Sanjeev Arora](https://www.cs.princeton.edu/~arora/). I graduated from Yao Class, Tsinghua University. During my undergraduate study, I was fortunate to work under the guidance of [Prof. Aditi Raghunathan](https://www.cs.cmu.edu/~aditirag/), [Prof. Kaifeng Lyu](https://kaifeng.ac/) and [Prof. Yang Yuan](http://people.iiis.tsinghua.edu.cn/~yuanyang/en.html). \n\n I currently work on modern LLM research, especially pretraining at scale and recursive self-improvement (RSI).\n\nPreviously, I interned at ByteDance Seed, building pretraining scaling ladders for norm-preserved training.",
   email: "xingyudang@gmail.com",
   avatar: "/avatar.jpg",
   social: {
@@ -13,9 +13,9 @@ export const personalInfo: PersonalInfo = {
     scholar: "https://scholar.google.com/citations?hl=en&user=_qG6rGkAAAAJ"
   },
   researchInterests: [
-    "Large Language Models",
     "Pretraining & Scaling",
     "Reasoning",
+    "Recursive Self-Improvement",
     "Learning Theory"
   ]
 };
