@@ -10,7 +10,8 @@ import SpotlightCard from '../components/SpotlightCard';
 import { TiltCard } from '../components/TiltCard';
 import ScrollReveal from '../components/ScrollReveal';
 import ShinyText from '../components/ShinyText';
-import { getBlogPosts, formatPostDate, postHref } from '../lib/blogLoader';
+import { getBlogPosts } from '../lib/blogLoader';
+import { PostCard } from '../components/PostCard';
 
 /**
  * The bio's first paragraph carries the advisor links and must stay real
@@ -207,12 +208,9 @@ function ResearchInterests() {
   );
 }
 
-/**
- * Entrance to the blog: the latest posts as plain rows in the same form as
- * publications and talks. No covers here; those stay on /blog.
- */
+/** Entrance to the blog: the latest two posts as the same cover cards as /blog. */
 function Blog() {
-  const posts = getBlogPosts().slice(0, 3);
+  const posts = getBlogPosts().slice(0, 2);
   if (!siteConfig.sections.blog || posts.length === 0) return null;
 
   return (
@@ -228,48 +226,13 @@ function Blog() {
         </div>
       </Reveal>
 
-      <ol className="mt-8">
+      <div className="mt-10 grid grid-cols-1 gap-x-12 gap-y-14 md:grid-cols-2">
         {posts.map((post) => (
-          <li key={post.id}>
-            <Reveal>
-              <SpotlightCard className="border-t border-rule" spotlightColor="rgba(138, 51, 36, 0.13)">
-                <article className="group relative grid min-w-0 grid-cols-1 gap-x-6 py-4 sm:grid-cols-[3.75rem_1fr]">
-                  <div className="mb-2 sm:mb-0">
-                    <span className="text-micro uppercase text-ink-faint transition-colors duration-500 ease-out group-hover:text-accent">
-                      {post.publishedAt.slice(0, 4)}
-                    </span>
-                  </div>
-
-                  <div className="min-w-0">
-                    <h3 className="max-w-[52ch] text-title text-ink transition-colors duration-500 ease-out group-hover:text-accent">
-                      <a href={postHref(post)}>
-                        <span className="absolute inset-0" aria-hidden="true" />
-                        {post.title}
-                      </a>
-                    </h3>
-
-                    <p className="mt-1 text-[0.875rem] text-ink-faint">
-                      <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt)}</time>
-                      <span aria-hidden="true"> &middot; </span>
-                      {post.readingTime} min read
-                    </p>
-
-                    <div className="pub-summary-row mt-2 flex items-baseline justify-between gap-4">
-                      <p className="pub-summary max-w-measure">{post.summary ?? post.excerpt}</p>
-                      <span className="inline-flex shrink-0 items-baseline gap-2 text-[0.9375rem] text-ink-muted transition-colors duration-500 ease-out group-hover:text-accent">
-                        Read
-                        <span className="inline-block transition-transform duration-500 ease-out group-hover:translate-x-1.5">
-                          &rarr;
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              </SpotlightCard>
-            </Reveal>
-          </li>
+          <Reveal key={post.id}>
+            <PostCard post={post} headingLevel="h3" />
+          </Reveal>
         ))}
-      </ol>
+      </div>
     </section>
   );
 }

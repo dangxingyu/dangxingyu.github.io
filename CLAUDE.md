@@ -36,7 +36,7 @@ Layout and fixed Header.
 
 | Route | Implementation |
 | --- | --- |
-| `/` | `src/pages/IntroPage.tsx`: hero, research interests, blog (latest three posts as text rows, no covers), selected publications, talks, footer |
+| `/` | `src/pages/IntroPage.tsx`: hero, research interests, blog (latest two posts as cover cards), selected publications, talks, footer |
 | `/blog` | `src/pages/BlogPage.tsx`: post index as a two-column grid of cover cards, sorted newest first |
 | `*` | Redirects to `/` |
 
@@ -57,8 +57,8 @@ keep Vite's `base: '/'` and the 404 shim's `pathSegmentsToKeep = 0` aligned.
 - `src/lib/blogLoader.ts`: manually maintained `blogPostsData`; this does not
   discover or parse the HTML files. It also exports `formatPostDate` and
   `postHref`, shared by every place a post is listed.
-- `src/components/PostCard.tsx`: the blog card on `/blog` (cover, date,
-  title, excerpt, tags).
+- `src/components/PostCard.tsx`: the blog card (cover, date, title, excerpt,
+  tags), used by `/blog` and the homepage Blog section.
 - `src/config/siteConfig.ts`: `hero`, `researchInterests`, `blog`,
   `publications`, and `talks` section flags. Every flag must be wired into `IntroPage.tsx`.
 - The footer is always rendered. Talks are also hidden when the array is empty.
@@ -102,13 +102,11 @@ them visible without competing with the publication titles.
 
 ### Ink-wash covers
 
-The homepage Blog section lists posts as plain rows in the publication style,
-using each post's one-line `summary` (falling back to `excerpt`). Blog posts
-carry generated ink-wash covers (the "笔墨" series: paper texture, graded ink,
-dry-brush streaks, a red seal) on `/blog` and in articles only. Covers are
-WebP at 1600x900 in `public/covers/`, plus a 1200x630 JPEG per local article
-for `og:image`. The homepage and publication list have no images besides the
-portrait; do not add covers or thumbnails there. `.ink-cover` in
+Blog posts carry generated ink-wash covers (the "笔墨" series: paper texture,
+graded ink, dry-brush streaks, a red seal), shown on the homepage Blog section,
+on `/blog`, and at the top of each article. Covers are WebP at 1600x900 in
+`public/covers/`, plus a 1200x630 JPEG per local article for `og:image`.
+Publications and talks have no images; do not add thumbnails there. `.ink-cover` in
 `src/index.css` gives the cards a hairline ring and hover scale. Covers are
 decorative (`alt=""`); titles carry the link names. Current assignments:
 batch-size 远山, RLVR 圆相. Keep new covers in the same series.

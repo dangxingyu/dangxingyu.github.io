@@ -13,7 +13,6 @@ const blogPostsData: BlogPost[] = [
     tags: ['Optimization', 'Batch Size', 'Interactive', 'Language Models'],
     readingTime: 12,
     cover: '/covers/blog-batch-size.webp',
-    summary: 'the paper as an interactive article, with its measurements and simulations',
   },
   {
     id: 'rlvr-ttlm',
@@ -25,7 +24,6 @@ const blogPostsData: BlogPost[] = [
     tags: ['RLVR', 'Reinforcement Learning', 'Theory', 'Language Models'],
     readingTime: 12,
     cover: '/covers/blog-rlvr-ttlm.webp',
-    summary: 'a one-bit signal from the future leads to the equations of KL-regularized RLVR',
   },
 ];
 

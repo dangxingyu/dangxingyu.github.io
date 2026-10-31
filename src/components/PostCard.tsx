@@ -2,12 +2,14 @@ import { BlogPost } from '../types';
 import { formatPostDate, postHref } from '../lib/blogLoader';
 
 /**
- * Blog post card for the /blog index: ink-wash cover, then date, title,
- * excerpt and tags.
+ * Blog post card: ink-wash cover, then date, title, excerpt and tags. Used by
+ * the /blog index and the homepage Blog section, so both stay identical.
  * The cover is decorative (alt=""); the title carries the link's name, and its
  * ::before overlay makes the whole card clickable.
  */
-export function PostCard({ post }: { post: BlogPost }) {
+export function PostCard({ post, headingLevel = 'h2' }: { post: BlogPost; headingLevel?: 'h2' | 'h3' }) {
+  const Heading = headingLevel;
+
   return (
     <article className="group relative flex min-w-0 flex-col">
       <div className="ink-cover">
@@ -24,12 +26,12 @@ export function PostCard({ post }: { post: BlogPost }) {
         <span>{post.readingTime} min read</span>
       </div>
 
-      <h2 className="mt-2 max-w-[34ch] font-display text-[1.5rem] leading-snug text-ink transition-colors duration-500 ease-out group-hover:text-accent">
+      <Heading className="mt-2 max-w-[34ch] font-display text-[1.5rem] leading-snug text-ink transition-colors duration-500 ease-out group-hover:text-accent">
         <a href={postHref(post)}>
           <span className="absolute inset-0" aria-hidden="true" />
           {post.title}
         </a>
-      </h2>
+      </Heading>
 
       <p className="mt-3 max-w-measure text-[0.9375rem] leading-[1.7] text-ink-muted">{post.excerpt}</p>
 
