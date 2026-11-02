@@ -78,10 +78,14 @@ do not introduce references to CSS variables that do not exist. Global styles,
 paper grain, CSS entrances, contact buttons, and publication summary bands live
 in `src/index.css`.
 
-The React site's root uses `zoom: 0.7` in `src/index.css` to display the entire
-interface at 70% size, including typography, images, spacing, and navigation.
-Keep component dimensions authored at their normal size; do not apply another
-70% reduction to individual components. Standalone blog HTML has its own CSS.
+The React site scales the entire interface with CSS `zoom` on the root,
+including typography, images, spacing, and navigation. An inline script in
+`index.html` sets it from the window width before first paint and on resize:
+0.85 below 640px, 0.8 below 1024px, and `clamp(0.7, width / 2057, 1.15)` on
+desktops, so the content column keeps the share of the screen it has at 1440px.
+`zoom: 0.7` in `src/index.css` is the fallback. Keep component dimensions
+authored at their normal size; do not apply another reduction to individual
+components. Standalone blog HTML has its own CSS.
 
 - Paper `#FAF8F4`, raised `#FFFDFA`, sunk `#F3EFE7`.
 - Ink `#16130F`, muted `#4A443C`, faint `#736A5F`.

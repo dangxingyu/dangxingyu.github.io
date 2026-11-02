@@ -14,7 +14,9 @@
 
 @layer base {
   html {
-    /* Scale the complete interface, including images, spacing and fixed UI. */
+    /* Scale the complete interface, including images, spacing and fixed UI.
+       Fallback only: an inline script in index.html sets the zoom from the
+       window width before first paint. */
     zoom: 0.7;
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;

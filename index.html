@@ -73,6 +73,25 @@
   }
   </script>
 
+  <!-- Page scale. The interface is authored at full size and scaled with CSS
+       zoom; src/index.css keeps 0.7 as the fallback. The zoom follows the
+       window: 0.85 on phones, 0.8 on tablets, and on desktops it grows with
+       the width so the content column keeps the share of the screen it has at
+       1440px (zoom 0.7), up to 1.15 on very wide screens. Inline in the head
+       so it applies before first paint. -->
+  <script>
+    (function () {
+      var root = document.documentElement;
+      function scale() {
+        var w = window.innerWidth;
+        var z = w < 640 ? 0.85 : w < 1024 ? 0.8 : Math.min(1.15, Math.max(0.7, w / 2057));
+        root.style.zoom = String(Math.round(z * 1000) / 1000);
+      }
+      scale();
+      window.addEventListener('resize', scale);
+    })();
+  </script>
+
   <!-- GitHub Pages SPA support: 404.html rewrites deep links into ?/path -->
   <script type="text/javascript">
     (function(l) {
