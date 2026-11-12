@@ -317,7 +317,7 @@ pre.bib { font: 12.5px/1.6 var(--mono); background: var(--panel); color: var(--i
 .site-back:hover { color: var(--ink); background: var(--panel); }
 .site-back svg { width: 16px; height: 16px; }
 .post-cover { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--rule); margin: 18px 0 28px; }
-@media (min-width: 900px) { .post-cover { width: var(--wide); max-width: none; margin-left: calc((var(--col) - var(--wide)) / 2); } }
+@media (min-width: 900px) { .post-cover { width: min(calc(100vw - 48px), 1400px); max-width: none; aspect-ratio: 2 / 1; margin-left: calc(50% - min(calc(50vw - 24px), 700px)); } }
 </style>
 </head>
 <body>
