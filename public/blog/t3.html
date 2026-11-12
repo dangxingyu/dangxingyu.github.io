@@ -11,11 +11,11 @@
 <meta property="og:title" content="Training-Time Testing for Data-Constrained Pretraining">
 <meta property="og:description" content="Inside every training step, T³ takes a trial step on half of the batch, tests it on the other half, and updates with the meta-gradient. It lowers validation loss on tuned data-constrained recipes at 300M to 1.4B parameters.">
 <meta property="og:url" content="https://dangxingyu.github.io/blog/t3.html">
-<meta property="og:image" content="https://dangxingyu.github.io/covers/og-t3.jpg">
+<meta property="og:image" content="https://dangxingyu.github.io/covers/og-t3-ink.jpg">
 <meta property="article:published_time" content="2026-11-12">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@xingyudang">
-<meta name="twitter:image" content="https://dangxingyu.github.io/covers/og-t3.jpg">
+<meta name="twitter:image" content="https://dangxingyu.github.io/covers/og-t3-ink.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&family=STIX+Two+Text:ital,wght@0,400;1,400&display=swap">
@@ -316,17 +316,17 @@ pre.bib { font: 12.5px/1.6 var(--mono); background: var(--panel); color: var(--i
 .site-back { display: inline-flex; align-items: center; gap: 8px; font: 14px/1 var(--sans); color: var(--muted); text-decoration: none; padding: 8px 10px; margin-left: -10px; border-radius: 6px; }
 .site-back:hover { color: var(--ink); background: var(--panel); }
 .site-back svg { width: 16px; height: 16px; }
-.post-cover { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--rule); margin: 18px 0 28px; }
-@media (min-width: 900px) { .post-cover { width: min(calc(100vw - 48px), 1400px); max-width: none; aspect-ratio: 2 / 1; margin-left: calc(50% - min(calc(50vw - 24px), 700px)); } }
+.post-banner { display: block; width: 100%; height: auto; aspect-ratio: 3 / 1; object-fit: cover; object-position: 50% 50%; border-bottom: 1px solid var(--rule); }
+@media (max-width: 640px) { .post-banner { aspect-ratio: 2 / 1; } }
 </style>
 </head>
 <body>
 
 
+<img class="post-banner" src="/covers/banner-t3.webp" alt="" width="2400" height="800">
 <div class="wrap" id="top">
   <header class="col masthead">
     <a class="site-back" href="/blog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>All posts</a>
-    <img class="post-cover" src="/covers/blog-t3.webp" alt="" width="1600" height="900">
     <h1 data-e="e001"><span class="tA">T</span>raining-<span class="tA">T</span>ime <span class="tQ">T</span>esting for Data-Constrained Pretraining</h1>
     <p class="dek" data-e="e002">A meta-gradient through one trial step, computed inside every training step.</p>
     <p class="byline" data-e="e003"><b>Xingyu Dang</b> · Nov 12, 2026</p>

@@ -11,7 +11,7 @@ const blogPostsData: BlogPost[] = [
     publishedAt: '2026-11-12',
     tags: ['Pretraining', 'Data-Constrained', 'Meta-Learning', 'Language Models'],
     readingTime: 13,
-    cover: '/covers/blog-t3.webp',
+    cover: '/covers/blog-t3-ink.webp',
   },
   {
     id: 'batch-size',
