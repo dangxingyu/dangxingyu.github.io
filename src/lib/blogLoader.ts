@@ -3,6 +3,17 @@ import { BlogPost } from '../types';
 // Blog metadata: local HTML posts or independently hosted articles.
 const blogPostsData: BlogPost[] = [
   {
+    id: 't3',
+    title: 'Training-Time Testing for Data-Constrained Pretraining',
+    slug: 't3',
+    excerpt: 'Inside every training step, T³ takes a trial step on half of the batch, tests it on the other half, and updates with the meta-gradient. Added to tuned data-constrained recipes with no hyperparameter changed, it lowers validation loss by 0.012 to 0.015 nats per token at 300M, 600M and 1.4B parameters, and T³ scripts hold the current records on both SlowRun tracks.',
+    content: '',
+    publishedAt: '2026-10-30',
+    tags: ['Pretraining', 'Data-Constrained', 'Meta-Learning', 'Language Models'],
+    readingTime: 13,
+    cover: '/covers/blog-t3.webp',
+  },
+  {
     id: 'batch-size',
     title: 'The Best Optimizer Depends on Batch Size',
     slug: 'batch-size',

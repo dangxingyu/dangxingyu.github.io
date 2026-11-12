@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Training-Time Testing</title>
+<meta name="description" content="Inside every training step, T³ takes a trial step on half of the batch, tests it on the other half, and updates with the meta-gradient. It lowers validation loss on tuned data-constrained recipes at 300M to 1.4B parameters.">
+<link rel="canonical" href="https://dangxingyu.github.io/blog/t3.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Xingyu Dang">
+<meta property="og:title" content="Training-Time Testing for Data-Constrained Pretraining">
+<meta property="og:description" content="Inside every training step, T³ takes a trial step on half of the batch, tests it on the other half, and updates with the meta-gradient. It lowers validation loss on tuned data-constrained recipes at 300M to 1.4B parameters.">
+<meta property="og:url" content="https://dangxingyu.github.io/blog/t3.html">
+<meta property="og:image" content="https://dangxingyu.github.io/covers/og-t3.jpg">
+<meta property="article:published_time" content="2026-10-30">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@xingyudang">
+<meta name="twitter:image" content="https://dangxingyu.github.io/covers/og-t3.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&family=STIX+Two+Text:ital,wght@0,400;1,400&display=swap">
+<style>
+/* Layout: a 680px reading column. Figures, tables and the card row break out to 840px on wide screens, and sit on the page without boxes. */
+:root {
+  /* One accent, blue, on cool neutrals. Blue is half A and the method; orange appears only where half Q is named,
+     as in the trailer. Charts use blue, charcoal and light gray. */
+  --bg: #ffffff;
+  --ink: #10151c;
+  --text: #2e3540;
+  --muted: #667080;
+  --faint: #98a1ae;
+  --rule: #e4e7ec;
+  --rule-2: #cdd3dc;
+  --panel: #f3f5f8;
+  --pill: #e7ebf2;
+  --pill-ink: #10151c;
+  --pill-hover: #d9dfe9;
+  --link: #1f5db8;
+  --A: #1f5db8;          /* half A, the support half; also T3 in every chart */
+  --Q: #c8661a;          /* half Q, the query half */
+  --base: #b6bdc8;       /* controls and baselines */
+  --self: #3b4350;       /* tested on its own tokens */
+  --a-wash: rgba(31, 93, 184, .08);
+  --hl: rgba(31, 93, 184, .18);
+  --a-hl: rgba(31, 93, 184, .13);
+  --q-wash: rgba(200, 102, 26, .16);
+
+  --read: "Iowan Old Style BT", "Iowan Old Style", "Source Serif 4", Georgia, serif;   /* prose and headings */
+  --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;                              /* figures, tables, labels */
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --serif: "STIX Two Text", "Times New Roman", serif;
+  --col: 680px;
+  --wide: 840px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 400 18px/1.6 var(--read);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+::selection { background: var(--a-hl); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: var(--faint); text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 4px; }
+
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.col { max-width: var(--col); margin: 0 auto; }
+
+/* header: the T's of Training-Time take half A's blue, the T of Testing takes half Q's orange */
+.masthead { padding-top: clamp(40px, 8vw, 72px); }
+h1 { font-size: clamp(32px, 5.4vw, 42px); line-height: 1.14; letter-spacing: -0.005em; font-weight: 600; color: var(--ink); margin: 0; text-wrap: balance; }
+.dek { font-size: clamp(19px, 2.4vw, 21px); line-height: 1.45; color: var(--text); margin: 12px 0 0; text-wrap: pretty; }
+.byline { margin: 18px 0 0; font: 14px/1.5 var(--sans); color: var(--muted); }
+.byline b { color: var(--ink); font-weight: 500; }
+.soon { margin: 4px 0 0; font: 13px/1.5 var(--sans); color: var(--muted); }
+
+/* prose */
+main section { padding-top: 8px; }
+h2 { font-size: 25px; line-height: 1.3; font-weight: 600; color: var(--ink); margin: 60px 0 0; text-wrap: balance; }
+p { margin: 16px 0 0; text-wrap: pretty; }
+strong { color: var(--ink); font-weight: 600; }
+.v { font-family: var(--serif); font-style: italic; font-size: 1.06em; letter-spacing: .01em; }
+math { font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", math; font-size: 1.05em; }
+sup.ref { font: 11px/0 var(--sans); margin-left: 1px; }
+sup.ref a { color: var(--muted); text-decoration: none; }
+sup.ref a:hover { color: var(--ink); }
+ul.tight { margin: 14px 0 0; padding-left: 20px; }
+ul.tight li { margin-top: 8px; }
+ul.tight li::marker { color: var(--faint); }
+
+/* figures and tables */
+figure { margin: 40px 0; font-family: var(--sans); }
+figure + p { margin-top: 0; }
+.fig-title { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.fig-title h4 { margin: 0; font-size: 15.5px; font-weight: 700; color: var(--ink); line-height: 1.35; }
+.card { position: relative; }
+.pill {
+  font: 600 13px/1 var(--sans); color: var(--pill-ink); background: transparent;
+  border: 0; border-radius: 999px; padding: 8px 13px; cursor: pointer; min-height: 32px;
+}
+.pill:hover { background: var(--pill-hover); }
+.pill[aria-pressed="true"], .pill.solid { background: var(--pill); }
+.pill.solid:hover { background: var(--pill-hover); }
+figcaption code { font: 12.5px var(--mono); color: var(--text); }
+figcaption { margin-top: 12px; max-width: var(--col); font-size: 13.5px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+figcaption b { color: var(--ink); font-weight: 700; }
+.chart { position: relative; width: 100%; min-height: 40px; }
+.chart svg { display: block; overflow: visible; }
+.chart text { font-family: var(--sans); font-size: 12px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart text.ink { fill: var(--ink); }
+.chart text.lab { font-size: 12.5px; fill: var(--text); }
+.chart text.sym { font-family: var(--serif); font-style: italic; font-size: 15px; }
+.chart .grid { stroke: var(--rule); stroke-width: 1; shape-rendering: crispEdges; }
+.chart .axis { stroke: var(--rule-2); stroke-width: 1; shape-rendering: crispEdges; }
+.chart .zero { stroke: var(--faint); stroke-width: 1; shape-rendering: crispEdges; }
+.chart .hit { fill: transparent; cursor: crosshair; }
+.tip {
+  position: absolute; pointer-events: none; z-index: 5; min-width: 120px; max-width: 260px;
+  background: var(--bg); border: 1px solid var(--rule-2); border-radius: 8px; padding: 8px 10px;
+  font-size: 12.5px; line-height: 1.45; color: var(--text); box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  font-variant-numeric: tabular-nums; opacity: 0; transition: opacity .12s;
+}
+.tip.on { opacity: 1; }
+
+/* Every chart is the same thing: horizontal bars from a zero line, with lower loss to the left.
+   --z is where zero sits in the plot column. Figure 3 uses the full layout, the two cards the compact one. */
+.mb-head, .mb-group, .mb-row { display: grid; grid-template-columns: 224px minmax(0, 1fr); column-gap: 14px; align-items: center; }
+.mb-plot { position: relative; display: block; align-self: stretch; min-height: 34px; }
+.mb-plot::before { content: ""; position: absolute; left: var(--z); top: 0; bottom: 0; width: 1px; background: var(--rule-2); }
+.mb-head { font-size: 12.5px; color: var(--muted); }
+.mb-head .mb-plot { min-height: 28px; }
+.mb-dir { position: absolute; top: 50%; transform: translateY(-50%); white-space: nowrap; }
+.mb-dir.l { right: calc(100% - var(--z) + 10px); }
+.mb-dir.r { left: calc(var(--z) + 10px); }
+.mb-group .mb-name { font-size: 12.5px; font-weight: 700; color: var(--muted); padding-top: 14px; }
+.mb-group .mb-plot { min-height: 30px; }
+.mb-row { font-size: 15px; line-height: 1.3; color: var(--ink); border-radius: 6px; }
+.chart .mb-row { cursor: default; }
+.mb-row.hit:hover, .mb-row.hit:focus-visible { background: var(--panel); }
+.mb-row.strong .mb-name, .mb-row.strong .mb-val { font-weight: 700; }
+.mb-band { position: absolute; top: 0; bottom: 0; background: var(--panel); }
+.mb-plot::before { z-index: 1; }
+.mb-row.hit:hover .mb-band, .mb-row.hit:focus-visible .mb-band { background: var(--rule); }
+.mb-bar { position: absolute; top: 50%; transform: translateY(-50%); display: block; height: 18px; }
+.mb-val { position: absolute; top: 50%; transform: translateY(-50%); font-size: 13.5px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mb.compact .mb-zero { position: relative; height: 16px; font-size: 11.5px; line-height: 1; color: var(--muted); }
+.mb.compact .mb-zero span { position: absolute; left: var(--z); transform: translateX(-50%); white-space: nowrap; }
+.mb.compact .mb-zero span.edge { transform: translateX(-100%); }
+.mb.compact .mb-row { display: block; font-size: 12.5px; line-height: 1.25; }
+.mb.compact .mb-row + .mb-row .mb-name { padding-top: 5px; display: block; }
+.mb.compact .mb-plot { min-height: 22px; }
+.mb.compact .mb-bar { height: 12px; }
+.mb.compact .mb-val { font-size: 12px; }
+@media (max-width: 640px) {
+  .mb:not(.compact) .mb-head { grid-template-columns: minmax(0, 1fr); }
+  .mb:not(.compact) .mb-head .mb-name { display: none; }
+  .mb:not(.compact) .mb-group { grid-template-columns: minmax(0, 1fr); }
+  .mb:not(.compact) .mb-group .mb-plot { display: none; }
+  .mb:not(.compact) .mb-row { grid-template-columns: minmax(0, 1fr); padding-block: 5px; }
+  .mb:not(.compact) .mb-row .mb-name { grid-row: 1; grid-column: 1; }
+  .mb:not(.compact) .mb-row .mb-plot { grid-row: 2; grid-column: 1 / -1; min-height: 26px; margin-top: 2px; }
+}
+/* the step illustration: contour lines on a canvas, the moving parts in an svg on top */
+.st-stage { position: relative; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--bg); }
+.st-stage canvas { display: block; width: 100%; }
+.st-stage:has(+ .st-strip) { border-radius: 10px 10px 0 0; }
+.st-strip { border: 1px solid var(--rule); border-top: 0; border-radius: 0 0 10px 10px; overflow: hidden; background: var(--panel); }
+.st-strip svg { display: block; }
+.chart .st-strip text { font-size: 12.5px; }
+.chart .st-strip text.sym { font-size: 16px; }
+.st-stage svg { position: absolute; inset: 0; display: block; }
+.chart .st-stage text { font-size: 12.5px; }
+.chart .st-stage text.sym { font-size: 17px; }
+.stepctl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 12px; font-size: 13.5px; color: var(--ink); }
+.stepctl .seg { display: inline-flex; gap: 4px; }
+.stepctl input[type="range"] { flex: 0 1 170px; min-width: 110px; accent-color: var(--A); }
+.stepctl output { font: 500 13px var(--mono); display: inline-block; min-width: 34px; margin-left: 4px; }
+.stepctl .st-now { flex: 1 1 220px; color: var(--muted); }
+.st-key { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.st-key i { display: inline-block; width: 20px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 8px; }
+.tablewrap { overflow-x: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+table.data tr:last-child td { border-bottom: 0; }
+table.data th { font-weight: 700; color: var(--ink); font-size: 13px; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data td.l { text-align: left; }
+table.data td .d { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
+table.data td.best { color: var(--ink); font-weight: 600; }
+table.data tr.sep td { border-top: 1px solid var(--rule-2); }
+table.data td .sub { color: var(--muted); font-size: 12.5px; }
+table.data td.neg { color: var(--ink); font-weight: 700; }
+/* results table: heavy rules at top and bottom, the way the paper sets it */
+.tbl table.data { font-size: 15px; }
+.tbl table.data thead th { border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--rule-2); }
+.tbl table.data tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+.tbl table.data th:first-child, .tbl table.data td:first-child { padding-left: 2px; }
+.tbl table.data th:last-child, .tbl table.data td:last-child { padding-right: 2px; }
+
+/* TL;DR and the three cards under it; each card's rows line up with its neighbors' (subgrid) */
+.tldr { margin-top: 36px; background: var(--panel); border-radius: 10px; padding: 18px 24px 22px; }
+.tldr .k { font: 700 12px var(--sans); letter-spacing: .05em; color: var(--muted); }
+.tldr p { font-size: 17px; line-height: 1.58; margin-top: 10px; }
+.tldr .k + p { margin-top: 6px; }
+.teaser { font-family: var(--sans); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); column-gap: 14px; margin-top: 20px; }
+.tcard { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 12px; min-width: 0; border: 1px solid var(--rule); border-radius: 10px; padding: 15px 16px 17px; color: var(--text); background: var(--bg); transition: border-color .15s; }
+.tcard, .tcard:hover { text-decoration: none; }
+.tcard:hover { border-color: var(--rule-2); }
+.tcard .tk { display: flex; justify-content: space-between; font: 700 11px var(--sans); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.tcard .tk::after { content: "→"; color: var(--faint); transition: color .15s; }
+.tcard:hover .tk::after { color: var(--ink); }
+.tcard .tq { font-size: 14.5px; line-height: 1.4; font-weight: 700; color: var(--ink); text-wrap: pretty; }
+.tcard .tv { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.tcard .tn { font-size: 25px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tcard .tn small { font-size: 15px; font-weight: 500; color: var(--muted); margin: 0 2px; }
+.tcard .ts { font-size: 13px; line-height: 1.4; color: var(--muted); margin-top: 4px; text-wrap: pretty; }
+.tzcode { margin: 0; font: 11.5px/1.7 var(--mono); color: var(--ink); white-space: pre; overflow: hidden; }
+.tzcode span { display: block; padding: 0 4px; border-radius: 3px; }
+.tzcode .add { background: var(--a-wash); }
+.tzcode .add::first-letter { color: var(--A); font-weight: 500; }
+.tzrow + .tzrow { margin-top: 10px; }
+.tzrow .nm { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.tzrow .nm i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+@media (max-width: 640px) {
+  .teaser { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; row-gap: 12px; }
+  .tcard { grid-row: auto; grid-template-rows: none; }
+}
+
+/* video */
+.trailer .card { overflow: hidden; border-radius: 10px; background: var(--panel); }
+.trailer video { filter: url(#cool); display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; max-width: 100%; background: var(--panel); }
+
+/* equations */
+.eqs { margin: 30px 0; overflow-x: auto; }
+.eqs + p { margin-top: 0; }
+.eqrow { display: grid; grid-template-columns: 104px minmax(0, 1fr); align-items: center; gap: 12px; min-width: 460px; }
+.eqrow + .eqrow { margin-top: 10px; }
+.eqrow .lbl { font: 700 13px/1.4 var(--sans); color: var(--muted); text-align: right; }
+.eqrow.ours .lbl { color: var(--A); }
+.eqrow .m { min-width: 0; }
+.eqrow math { font-size: 1.28em; }
+.eqnote { margin-top: 12px; font: 13.5px/1.5 var(--sans); color: var(--muted); padding-left: 116px; text-wrap: pretty; }
+@media (max-width: 560px) {
+  .eqnote { padding-left: 0; }
+  .eqrow { grid-template-columns: minmax(0, 1fr); gap: 2px; min-width: 0; }
+  .eqrow .lbl { text-align: left; }
+  .eqrow math { font-size: 1.05em; }
+  .eqrow + .eqrow { margin-top: 14px; }
+}
+.tA { color: var(--A); }
+.tQ { color: var(--Q); }
+.mk { border-radius: 5px; transition: background .15s; padding: 0 1px; }
+.mk.on { background: var(--hl); }
+.phi-box { background: var(--q-wash); border-radius: 5px; padding: 0 2px; }
+.h-box { background: var(--a-hl); border-radius: 5px; }
+math .linkable { transition: background-color .15s; }
+math .linkable.on { background-color: var(--hl); }
+
+/* code */
+.code {
+  margin: 0; font: 13px/1.75 var(--mono); color: var(--ink); background: var(--panel);
+  border-radius: 10px; padding: 14px 0; overflow-x: auto;
+}
+.code .ln { display: block; position: relative; padding: 0 16px 0 36px; white-space: pre; cursor: default; transition: background .12s; }
+.code .ln.add { background: var(--a-wash); }
+.code .ln.add::before { content: "+"; position: absolute; left: 16px; color: var(--A); font-weight: 500; }
+.code .ln.on { background: var(--hl); }
+.code .c { color: var(--muted); }
+
+/* references & citation */
+.refs ol { list-style: none; padding: 0; margin: 16px 0 0; }
+.refs li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 6px; font: 14px/1.5 var(--sans); margin-top: 10px; scroll-margin-top: 24px; }
+.refs li b { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.refs li:target { background: var(--hl); border-radius: 6px; }
+pre.bib { font: 12.5px/1.6 var(--mono); background: var(--panel); color: var(--ink); padding: 14px 16px; border-radius: 10px; overflow-x: auto; margin: 16px 0 0; }
+.copyrow { display: flex; justify-content: flex-end; margin-top: 8px; }
+.foot { display: flex; justify-content: flex-end; margin: 40px 0 72px; padding-top: 18px; border-top: 1px solid var(--rule); font: 14px/1.5 var(--sans); }
+
+@media (max-width: 560px) {
+  body { font-size: 17px; }
+  .tldr { padding: 14px 16px 16px; }
+  .tldr p { font-size: 16.5px; }
+  h2 { font-size: 22.5px; margin-top: 48px; }
+  table.data { font-size: 13px; }
+  table.data th, table.data td { padding: 8px 9px; }
+  .tbl table.data { font-size: 13.5px; }
+  .tbl table.data th, .tbl table.data td { padding: 9px 7px; }
+  .tbl table.data td:first-child { white-space: normal; min-width: 92px; }
+  .tbl table.data th { white-space: normal; vertical-align: bottom; }
+  .tbl table.data td .sub { display: block; }
+}
+@media (min-width: 900px) {
+  figure, .teaser { margin-left: calc((var(--col) - var(--wide)) / 2); margin-right: calc((var(--col) - var(--wide)) / 2); }
+  /* the TL;DR panel lines up with the card row below it; its text stays in the reading column */
+  .tldr { margin-left: calc((var(--col) - var(--wide)) / 2); margin-right: calc((var(--col) - var(--wide)) / 2); padding-left: calc((var(--wide) - var(--col)) / 2); padding-right: calc((var(--wide) - var(--col)) / 2); }
+}
+/* in-place editing: a small bar for people who can edit the artifact, and outlines on the blocks while editing */
+.t3e { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 50; display: flex; align-items: center; gap: 4px; padding: 5px 5px 5px 16px; font: 13px/1 var(--sans); color: var(--muted); background: var(--bg); border: 1px solid var(--rule-2); border-radius: 999px; box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.t3e.idle { padding: 4px; }
+.t3e span { margin-right: 8px; white-space: nowrap; }
+.t3e button:disabled { opacity: .5; cursor: default; }
+.t3-editing [data-e] { outline: 1px dashed transparent; outline-offset: 3px; border-radius: 3px; cursor: text; }
+.t3-editing [data-e]:hover { outline-color: var(--rule-2); }
+.t3-editing [data-e]:focus { outline: 2px solid var(--link); }
+.t3-editing [data-e]:empty::before { content: "Empty"; color: var(--faint); font-style: italic; }
+.t3-editing .tcard { cursor: default; }
+@media print { .t3e { display: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* homepage copy: back link and ink cover above the title, as in the site's other articles */
+.site-back { display: inline-flex; align-items: center; gap: 8px; font: 14px/1 var(--sans); color: var(--muted); text-decoration: none; padding: 8px 10px; margin-left: -10px; border-radius: 6px; }
+.site-back:hover { color: var(--ink); background: var(--panel); }
+.site-back svg { width: 16px; height: 16px; }
+.post-cover { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--rule); margin: 18px 0 28px; }
+</style>
+</head>
+<body>
+
+
+<div class="wrap" id="top">
+  <header class="col masthead">
+    <a class="site-back" href="/blog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>All posts</a>
+    <img class="post-cover" src="/covers/blog-t3.webp" alt="" width="1600" height="900">
+    <h1 data-e="e001"><span class="tA">T</span>raining-<span class="tA">T</span>ime <span class="tQ">T</span>esting for Data-Constrained Pretraining</h1>
+    <p class="dek" data-e="e002">A meta-gradient through one trial step, computed inside every training step.</p>
+    <p class="byline" data-e="e003"><b>Xingyu Dang</b> · Oct 30, 2026</p>
+    <p class="soon" data-e="e004">arXiv paper and code repository coming soon.</p>
+  </header>
+</div>
+
+<main class="wrap">
+<div class="col">
+
+<section id="overview">
+  <div class="tldr">
+    <div class="k">TL;DR</div>
+    <p data-e="e005">Model size and training compute are growing fast, while the supply of pretraining text grows very slowly<sup class="ref"><a href="#ref-1">1</a></sup>. Data-constrained pretraining has therefore become an important topic<sup class="ref"><a href="#ref-2">2</a></sup><sup class="ref"><a href="#ref-3">3</a></sup>. SlowRun<sup class="ref"><a href="#ref-4">4</a></sup> turns it into a public benchmark: every entry trains on the same 100M tokens within a fixed time budget and is ranked by validation loss.</p>
+    <p data-e="e006">In this work we propose a data-constrained optimization method called <strong>Training-Time Testing (T³)</strong>. Inside every training step, we split the batch into halves <span class="v tA">A</span> and <span class="v tQ">Q</span> and compute a meta-gradient through one trial step: take a trial step on <span class="v tA">A</span>, use <span class="v tQ">Q</span> as a validation set to test the trial model, and send <span class="v tQ">Q</span>’s gradient back to the original model as the meta-gradient. In practice we use the first-order approximation of the meta-gradient.</p>
+    <p data-e="e007">We added T³ to the tuned recipes of Kim et al.<sup class="ref"><a href="#ref-3">3</a></sup> and changed none of their hyperparameters. Validation loss drops by 0.012 to 0.015 nats per token at 300M, 600M and 1.4B parameters compared with their tuned baselines. On SlowRun<sup class="ref"><a href="#ref-4">4</a></sup>, adding it to the record scripts lowers the loss by 0.0111 on the one-hour track and 0.0119 on the 15-minute track, and T³ scripts hold the <a href="https://github.com/qlabs-eng/slowrun#world-record-history">current records</a> on both.</p>
+  </div>
+
+  <div class="teaser">
+    <a class="tcard" href="#first-order">
+      <div class="tk" data-e="e008">The step</div>
+      <div class="tq" data-e="e009">Three lines added to a training step</div>
+      <div class="tv"><pre class="tzcode"><span>  A, Q = batch.chunk(2)</span><span>  g_A = grad(loss(A))</span><span class="add">+ u = unit(g_A[mlp])</span><span class="add">+ shift(mlp, -eta*u)</span><span>  g_Q = grad(loss(Q))</span><span class="add">+ shift(mlp, +eta*u)</span><span>  step((g_A + g_Q) / 2)</span></pre></div>
+      <div><div class="tn" data-e="e010">+6%</div><div class="ts" data-e="e011">step time at 300M</div></div>
+    </a>
+    <a class="tcard" href="#results">
+      <div class="tk" data-e="e012">Pretraining</div>
+      <div class="tq" data-e="e013">Tuned recipes at three model sizes</div>
+      <div class="tv"><div class="chart" data-chart="gains"></div></div>
+      <div><div class="tn" data-e="e014">−0.0144</div><div class="ts" data-e="e015">nats per token at 300M; 8 of 8 seeds improve</div></div>
+    </a>
+    <a class="tcard" href="#needs">
+      <div class="tk" data-e="e016">Why it works</div>
+      <div class="tq" data-e="e017">Three alternatives that don’t help</div>
+      <div class="tv"><div class="chart" data-chart="ends" data-rows="card"></div></div>
+      <div><div class="tn" data-e="e018">−0.0101</div><div class="ts" data-e="e019">15-minute SlowRun; the three alternatives end above the baseline</div></div>
+    </a>
+  </div>
+
+  <p style="margin-top:32px" data-e="e020">By the 10th pass over a corpus, the model has seen every token in the batch 9 times. A step computed on those tokens lowers their loss whether the model learned something general or just fit those particular tokens a little tighter, and the next-token-prediction loss on those same tokens does not distinguish the two. T³ splits the batch into halves <span class="v tA">A</span> and <span class="v tQ">Q</span>, takes a trial step on <span class="v tA">A</span>, and uses <span class="v tQ">Q</span>’s gradient at the new weights as feedback. This pulls the update toward weights where a step on one half also helps the other, so the model learns features that generalize beyond the tokens it trained on.</p>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="cool" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.996 0 0 0 0  0 1.008 0 0 0  0 0 1.038 0 0  0 0 0 1 0"/></filter></svg>
+  <figure class="trailer">
+    <div class="card"><video id="trailer" src="t3-trailer.mp4" poster="t3-trailer-poster.jpg" muted loop playsinline controls preload="metadata" aria-label="Animation of one T³ step"></video></div>
+    <figcaption data-e="e021">One T³ step. Blue is the half that takes the trial step, orange the half that tests it.</figcaption>
+  </figure>
+</section>
+
+<section id="update">
+  <h2 data-e="e022">The step</h2>
+  <p data-e="e023">T³ trains for two losses at once: the loss on <span class="v tA">A</span> at the current weights, and the loss on <span class="v tQ">Q</span> after a trial step on <span class="v tA">A</span>.</p>
+
+  <div class="eqs">
+    <div class="eqrow">
+      <div class="lbl" data-e="e024">Objective</div>
+      <div class="m"><math displaystyle="true"><mi>J</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mrow><mo>[</mo><mrow class="tA"><msub><mi>L</mi><mi>A</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mo>+</mo><mrow class="tQ"><msub><mi>L</mi><mi>Q</mi></msub><mo stretchy="false">(</mo><mi>φ</mi><mo stretchy="false">)</mo></mrow><mo>]</mo></mrow></math></div>
+    </div>
+    <div class="eqrow">
+      <div class="lbl" data-e="e025">where</div>
+      <div class="m"><math displaystyle="true"><mi>φ</mi><mo>=</mo><mi>θ</mi><mo>−</mo><mi>η</mi><mspace width="0.1em"/><msub><mi>u</mi><mi>A</mi></msub><mo>,</mo><mspace width="1.2em"/><msub><mi>u</mi><mi>A</mi></msub><mo>=</mo><mfrac><mrow><mi>P</mi><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mrow><mo>‖</mo><mi>P</mi><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>‖</mo></mrow></mfrac></math></div>
+    </div>
+    <div class="eqnote" data-e="e026"><span class="v">φ</span> is <span class="v">θ</span> after a trial step with learning rate <span class="v">η</span> downhill on <span class="v">A</span>. <span class="v">P</span> is a mask that selects which modules take part in the meta-gradient.</div>
+  </div>
+
+  <p data-e="e027">This is the objective of MAML (Model-Agnostic Meta-Learning)<sup class="ref"><a href="#ref-5">5</a></sup>, with <span class="v tA">A</span> as its support set and <span class="v tQ">Q</span> as its query set, plus <span class="v tA">A</span>’s own loss. The update is the gradient of <span class="v">J</span>. Because <span class="v">φ</span> depends on <span class="v">θ</span>, the chain rule sends <span class="v tQ">Q</span>’s gradient at <span class="v">φ</span> back through the trial step. That term is the meta-gradient:</p>
+
+  <div class="eqs">
+    <div class="eqrow">
+      <div class="lbl" data-e="e028">Exact step</div>
+      <div class="m"><math displaystyle="true"><mover accent="true"><mi>g</mi><mo>^</mo></mover><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mrow><mo>[</mo><mrow class="tA"><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mo>+</mo><mrow class="h-box"><msup><mrow><mo>(</mo><mfrac><mrow><mo>∂</mo><mi>φ</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><mo>)</mo></mrow><mo>⊤</mo></msup></mrow><mrow class="tQ"><mo>∇</mo><msub><mi>L</mi><mi>Q</mi></msub><mo stretchy="false">(</mo><mi>φ</mi><mo stretchy="false">)</mo></mrow><mo>]</mo></mrow></math></div>
+    </div>
+    <div class="eqrow">
+      <div class="lbl" data-e="e029">where</div>
+      <div class="m"><math displaystyle="true"><mfrac><mrow><mo>∂</mo><mi>φ</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><mo>=</mo><mi>I</mi><mo>−</mo><mi>η</mi><mspace width="0.1em"/><mfrac><mrow><mo>∂</mo><msub><mi>u</mi><mi>A</mi></msub></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac></math></div>
+    </div>
+    <div class="eqnote" data-e="e030">The shaded factor is how <span class="v">φ</span> moves when <span class="v">θ</span> moves. It contains the second derivative of <span class="v">A</span>’s loss, because moving <span class="v">θ</span> changes <span class="v">A</span>’s gradient and with it the direction of the trial step.</div>
+  </div>
+
+  <figure id="fig-step">
+    <div class="fig-title"><h4 data-e="e031">T³ steps on two toy loss surfaces</h4></div>
+    <div class="card">
+      <div class="chart" data-chart="step"></div>
+      <div class="stepctl">
+        <button class="pill solid" id="step-play" type="button">Pause</button>
+        <label for="step-eta">Trial-step length <span class="v">η</span><output id="step-eta-o" for="step-eta">0.80</output></label>
+        <input id="step-eta" type="range" min="0" max="1.2" step="0.05" value="0.8">
+        <span class="seg" role="group" aria-label="Which version of the step the path takes"><button class="pill" id="step-exact" type="button" aria-pressed="true">Exact</button><button class="pill" id="step-first" type="button" aria-pressed="false">First-order</button></span>
+        <span class="st-now" id="step-now"></span>
+      </div>
+      <div class="st-key">
+        <span><i style="background:var(--A)"></i>downhill on <span class="v">A</span>, read at <span class="v">θ</span></span>
+        <span><i style="background:var(--Q)"></i>downhill on <span class="v">Q</span>, read at <span class="v">φ</span></span>
+        <span><i style="background:var(--Q);opacity:.35"></i><span class="v">Q</span>’s arrow in the other version</span>
+        <span><i style="background:var(--ink)"></i>the step T³ takes</span>
+      </div>
+    </div>
+    <figcaption data-e="e032"><b>Figure 1.</b> A drawing. The curves are contour lines of two loss surfaces over two weights, blue for half <span class="v">A</span> and orange for half <span class="v">Q</span>. From <span class="v">θ</span>, the trial step goes a distance <span class="v">η</span> downhill on <span class="v">A</span> and lands on the dotted circle at <span class="v">φ</span>. The strip underneath follows both losses along that step. <span class="v">A</span>’s loss falls because the trial step comes from <span class="v">A</span>. Half <span class="v">Q</span> tests that trial step. Figure 3 compares the exact and first-order steps in a language model.</figcaption>
+  </figure>
+</section>
+
+<section id="first-order">
+  <h2 data-e="e033">The first-order approximation</h2>
+  <p data-e="e034">The shaded factor is expensive. It needs a second backward pass through <span class="v tA">A</span>’s gradient, and in our runs a step with it took about 3.5 times as long. First-order MAML<sup class="ref"><a href="#ref-5">5</a></sup> sets the factor to the identity, so <span class="v tQ">Q</span>’s gradient at <span class="v">φ</span> is carried back unchanged. This leaves an ordinary step that accumulates its batch in two halves, with the second gradient computed at the new weights:</p>
+
+  <div class="eqs" id="eqs">
+    <div class="eqrow">
+      <div class="lbl" data-e="e035">Ordinary step</div>
+      <div class="m"><math displaystyle="true"><mover accent="true"><mi>g</mi><mo>^</mo></mover><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mrow><mo>[</mo><mrow class="tA"><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mo>+</mo><mrow class="tQ"><mo>∇</mo><msub><mi>L</mi><mi>Q</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mo>]</mo></mrow></math></div>
+    </div>
+    <div class="eqrow ours">
+      <div class="lbl" data-e="e036">First-order step</div>
+      <div class="m"><math displaystyle="true"><mrow class="linkable" data-k="avg"><mover accent="true"><mi>g</mi><mo>^</mo></mover><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><mrow><mo>[</mo><mrow class="tA linkable" data-k="gA"><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mo>+</mo><mrow class="tQ linkable" data-k="gQ"><mo>∇</mo><msub><mi>L</mi><mi>Q</mi></msub><mo stretchy="false">(</mo><mi class="phi-box">φ</mi><mo stretchy="false">)</mo></mrow><mo>]</mo></mrow></math></div>
+    </div>
+    <div class="eqrow ours">
+      <div class="lbl" data-e="e037">where</div>
+      <div class="m"><math displaystyle="true"><mrow class="linkable" data-k="phi"><mi>φ</mi><mo>=</mo><mi>θ</mi><mo>−</mo><mi>η</mi><mspace width="0.1em"/><msub><mi>u</mi><mi>A</mi></msub></mrow><mo>,</mo><mspace width="1.2em"/><mrow class="linkable" data-k="u"><msub><mi>u</mi><mi>A</mi></msub><mo>=</mo><mfrac><mrow><mi>P</mi><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mrow><mo>‖</mo><mi>P</mi><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>‖</mo></mrow></mfrac></mrow></math></div>
+    </div>
+    <div class="eqnote" data-e="e038">Hover or tap a line of the code below to find its term here.</div>
+  </div>
+
+  <figure id="fig-code">
+    <div class="fig-title"><h4 data-e="e039">One T³ step</h4></div>
+    <pre class="code" id="t3code"><code><span class="ln" data-k="split">A, Q = batch.chunk(2)                     <span class="c"># two halves of the same shuffled batch</span></span><span class="ln" data-k="gA">g_A = grad(loss(model, A))                <span class="c"># ∇L_A(θ)</span></span><span class="ln add" data-k="u">u = unit(g_A[mlp])                        <span class="c"># u_A: norm 1 on the matrices the trial step moves</span></span><span class="ln add" data-k="phi">shift(model, mlp, -eta * u)               <span class="c"># θ → φ = θ − η·u_A   (eta = 0.3)</span></span><span class="ln" data-k="gQ">g_Q = grad(loss(model, Q))                <span class="c"># ∇L_Q(φ); no gradient through the shift</span></span><span class="ln add" data-k="restore">shift(model, mlp, +eta * u)               <span class="c"># back to θ</span></span><span class="ln" data-k="avg">opt.step((g_A + g_Q) / 2)                 <span class="c"># the recipe's own AdamW or Muon step</span></span></code></pre>
+    <figcaption data-e="e040"><b>Figure 2.</b> In this example, the trial step has length 0.3 and moves the MLP matrices in the second half of the layers, <code>mlp</code> in the code. The loss and backward pass are the baseline’s own, and the lines marked + are what T³ adds.</figcaption>
+  </figure>
+
+  <p data-e="e041">Sometimes we want the trial step to move only some of the weights, and <span class="v">P</span> is the mask that keeps them. The trial step is also normalized, which means <span class="v">φ</span> is always a distance <span class="v">η</span> from <span class="v">θ</span>, however large the gradient is. In practice we use <span class="v">η</span> = 0.3.</p>
+  <p data-e="e042">The rest of training is the baseline’s, including the optimizer and its schedule. The only extra work is a normalization, a shift and a restore, so T³ steps take 6% longer at 300M and 1.4B and 9% longer at 600M. A one-hour SlowRun<sup class="ref"><a href="#ref-4">4</a></sup> run takes 24 seconds more.</p>
+
+  <p data-e="e044">Nichol, Achiam and Schulman<sup class="ref"><a href="#ref-6">6</a></sup> expanded both updates in <span class="v">α</span> to see what dropping the shaded factor loses:</p>
+
+  <div class="eqs">
+    <div class="eqrow">
+      <div class="lbl" data-e="e045">Exact</div>
+      <div class="m"><math displaystyle="true"><mover accent="true"><mi>g</mi><mo>^</mo></mover><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mrow><mo>[</mo><mrow class="tA"><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub></mrow><mo>+</mo><mrow class="tQ"><mo>∇</mo><msub><mi>L</mi><mi>Q</mi></msub></mrow><mo>]</mo></mrow><mo>−</mo><mfrac><mi>α</mi><mn>2</mn></mfrac><mspace width="0.15em"/><mo>∇</mo><mrow><mo>⟨</mo><mrow class="tA"><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub></mrow><mo>,</mo><mrow class="tQ"><mo>∇</mo><msub><mi>L</mi><mi>Q</mi></msub></mrow><mo>⟩</mo></mrow></math></div>
+    </div>
+    <div class="eqrow">
+      <div class="lbl" data-e="e046">First-order</div>
+      <div class="m"><math displaystyle="true"><mover accent="true"><mi>g</mi><mo>^</mo></mover><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mrow><mo>[</mo><mrow class="tA"><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub></mrow><mo>+</mo><mrow class="tQ"><mo>∇</mo><msub><mi>L</mi><mi>Q</mi></msub></mrow><mo>]</mo></mrow><mo>−</mo><mfrac><mi>α</mi><mn>4</mn></mfrac><mspace width="0.15em"/><mo>∇</mo><mrow><mo>⟨</mo><mrow class="tA"><mo>∇</mo><msub><mi>L</mi><mi>A</mi></msub></mrow><mo>,</mo><mrow class="tQ"><mo>∇</mo><msub><mi>L</mi><mi>Q</mi></msub></mrow><mo>⟩</mo></mrow></math></div>
+    </div>
+    <div class="eqnote" data-e="e047">The trial step is a plain gradient step of size <span class="v">α</span>, and each update is averaged over which half takes it. All gradients at <span class="v">θ</span>; terms of order <span class="v">α</span><sup>2</sup> dropped.</div>
+  </div>
+
+  <p data-e="e048">Nichol et al. see this extra term as the part that generalizes. A small step on <span class="v tA">A</span> lowers <span class="v tQ">Q</span>’s loss by about <span class="v">α</span>⟨∇L<sub>A</sub>, ∇L<sub>Q</sub>⟩, so a larger inner product means a step on one half also helps the other. They also found first-order MAML about as good as full MAML on few-shot benchmarks<sup class="ref"><a href="#ref-5">5</a></sup><sup class="ref"><a href="#ref-6">6</a></sup>.</p>
+
+  <p data-e="e049">We compared the two on the 300M recipe of Kim et al.<sup class="ref"><a href="#ref-3">3</a></sup>, at 4, 8, 16 and 24 passes over the data.</p>
+
+  <figure id="fig-exact">
+    <div class="fig-title"><h4 data-e="e050">Final validation loss, exact step minus first-order step</h4></div>
+    <div class="card"><div class="chart" data-chart="exact"></div></div>
+    <figcaption data-e="e051"><b>Figure 3.</b> 300M parameters on the fixed DCLM<sup class="ref"><a href="#ref-7">7</a></sup> pool, in nats per token; hover or tap a row for both losses. Each version retuned its own learning rate, weight decay and trial-step size. The gray band is ±0.006, the standard deviation of the 300M baseline across seeds.</figcaption>
+  </figure>
+
+  <p data-e="e052">At 8, 16 and 24 passes the two end within 0.004 of each other, less than the seed standard deviation of the baseline. At 4 passes the exact step ends 0.011 lower. At the pass counts the tuned recipes use we cannot separate the two, and a first-order step takes only about 30% of the time of an exact step. Every result below uses the first-order step.</p>
+
+  <p data-e="e053">Compared with first-order MAML (FOMAML), T³ normalizes the trial step and applies it only to some of the weight matrices, such as the MLP matrices. It also keeps <span class="v tA">A</span>’s gradient: FOMAML updates with <span class="v tQ">Q</span>’s gradient alone, and T³ averages the two. On the one-hour SlowRun<sup class="ref"><a href="#ref-4">4</a></sup> track, updating with <span class="v tQ">Q</span>’s gradient alone, as plain FOMAML does, ended 0.021 above the baseline.</p>
+</section>
+
+<section id="results">
+  <h2 data-e="e054">Results on tuned recipes</h2>
+  <p data-e="e055">Kim et al.<sup class="ref"><a href="#ref-3">3</a></sup> tuned learning rate, weight decay and the number of passes jointly for each model size, on a fixed pool of 196.6M DCLM tokens<sup class="ref"><a href="#ref-7">7</a></sup>: 16 passes at 300M parameters, 8 at 600M and 1.4B. We took those recipes as they are and added the T³ step. The trial step’s learning rate is the one thing we chose. Each T³ run is paired with a baseline run that has the same seed, data order and evaluation.</p>
+  <p data-e="e056">SlowRun<sup class="ref"><a href="#ref-4">4</a></sup> fixes the data, 100M FineWeb tokens<sup class="ref"><a href="#ref-8">8</a></sup>, and a wall-clock limit, and ranks training scripts by validation loss. Its one-hour track trains a 1.4B model and its 15-minute track a model of about 300M. We added the T³ step to the record script of each track and changed nothing else.</p>
+
+  <figure id="tab-results">
+    <div class="fig-title"><h4 data-e="e057">Final validation loss, T³ against the same recipe without it</h4></div>
+    <div class="card tbl"><div class="tablewrap"><table class="data">
+      <thead><tr><th data-e="e058">Setting</th><th data-e="e059">T³ − baseline</th><th data-e="e060">95% interval</th><th data-e="e062">Baseline</th><th data-e="e063">T³</th></tr></thead>
+      <tbody>
+        <tr><td class="l" data-e="e064">300M, 16 passes</td><td class="neg" data-e="e065">−0.0144</td><td data-e="e066">−0.0166 to −0.0123</td><td data-e="e068">3.5397</td><td data-e="e069">3.5252</td></tr>
+        <tr><td class="l" data-e="e070">600M, 8 passes</td><td class="neg" data-e="e071">−0.0122</td><td data-e="e072">−0.0195 to −0.0049</td><td data-e="e074">3.4720</td><td data-e="e075">3.4597</td></tr>
+        <tr><td class="l" data-e="e076">1.4B, 8 passes</td><td class="neg" data-e="e077">−0.0151</td><td data-e="e078">−0.0229 to −0.0073</td><td data-e="e080">3.4334</td><td data-e="e081">3.4183</td></tr>
+        <tr class="sep"><td class="l" data-e="e082">SlowRun, one hour</td><td class="neg" data-e="e083">−0.0111</td><td data-e="e084">−0.0138 to −0.0085</td><td data-e="e086">3.2017</td><td data-e="e087">3.1906</td></tr>
+        <tr><td class="l" data-e="e088">SlowRun, 15 minutes</td><td class="neg" data-e="e089">−0.0119</td><td data-e="e090">−0.0156 to −0.0082</td><td data-e="e092">3.3078</td><td data-e="e093">3.2959</td></tr>
+      </tbody>
+    </table></div></div>
+    <figcaption data-e="e094"><b>Table 1.</b> Means over paired seeds, nats per token; each row uses 3 to 8 seeds. The interval is the 95% confidence interval of the paired difference. Every row adds the T³ step and nothing else. Top: fixed DCLM data, the recipes of Kim et al.<sup class="ref"><a href="#ref-3">3</a></sup> Bottom: SlowRun scores after each script’s checkpoint averaging, against the record script on the same seed. The trial step uses the settings of Figure 2 in the top rows, length 0.3 on all the matrices Muon updates at one hour, and length 0.5 on the MLP matrices at 15 minutes.</figcaption>
+  </figure>
+
+  <p data-e="e095">Every setting improves by a little over 0.01 nats, and every interval lies below zero. At 300M, the baseline has a seed standard deviation of 0.006 and all eight pairs improve. Across the table, the one seed that got worse, at 1.4B, did so by 0.0059.</p>
+  <p data-e="e096">Both of our submissions are still the records on the <a href="https://github.com/qlabs-eng/slowrun#world-record-history">SlowRun leaderboard</a> as of November 9, 2026. The 15-minute record, 3.295, adds only the T³ step. The one-hour record, 3.183, also halves the recipe’s dropout, removes stochastic depth and puts the trial step’s length on a schedule. The table above reports the run that adds the T³ step alone.</p>
+  <p data-e="e097">In data-constrained pretraining, ensembling independently trained models is the strongest known way to spend more compute<sup class="ref"><a href="#ref-3">3</a></sup>, so we checked whether the gain holds in an ensemble. Most of it remains. Averaging the predictions of two, four or eight members, T³ ensembles end below baseline ensembles of the same seeds at every size and member count we ran: by 0.0087 at 300M and 0.0144 at 1.4B with eight members, and by 0.0137 at 600M with four.</p>
+</section>
+
+<section id="needs">
+  <h2 data-e="e098">Which tokens do the testing</h2>
+  <p data-e="e099">A trial step followed by a second gradient could help as a kind of lookahead rather than by testing, since the second gradient is taken a little further along the descent path. To tell the two apart we ran variants of the 15-minute SlowRun<sup class="ref"><a href="#ref-4">4</a></sup> script, three seeds each:</p>
+  <ul class="tight">
+    <li data-e="e130"><em>Own tokens</em> keeps the split, but each half tests its own trial step.</li>
+    <li data-e="e131"><em>Later half of each sequence</em> takes the trial step on the first half of every sequence and tests it on the second.</li>
+    <li data-e="e132">The other four keep the split and spoil the trial step: zero length, a random direction, the uphill direction, or the previous step’s direction.</li>
+  </ul>
+
+  <figure id="fig-ends">
+    <div class="fig-title"><h4 data-e="e100">Final loss against the record script, by what tests the trial step</h4></div>
+    <div class="card"><div class="chart" data-chart="ends"></div></div>
+    <figcaption data-e="e101"><b>Figure 4.</b> 15-minute SlowRun track. Final validation loss after the script’s checkpoint averaging, minus the record script on the same seed, in nats per token. Bars are means over three seeds; hover or tap a row for each seed. The last row is the record script itself with half the batch, twice the steps and its learning rates scaled by <span style="white-space:nowrap">1/√2</span>.</figcaption>
+  </figure>
+
+  <p data-e="e102">Testing each trial step on its own half ends 0.020 above the record script, on every seed. Testing on the other half ends 0.010 below. Testing on its own tokens does not start out worse. Figure 5 follows both tests after every epoch.</p>
+
+  <figure id="fig-epochs">
+    <div class="fig-title"><h4 data-e="e103">Loss against the record script after every epoch</h4><button class="pill solid" id="epochs-play" type="button">Replay</button></div>
+    <div class="card"><div class="chart" data-chart="epochs"></div></div>
+    <div class="st-key">
+      <span><i style="background:var(--self)"></i>tested on its own tokens</span>
+      <span><i style="background:var(--A)"></i>tested on the other half (T³)</span>
+      <span><i style="background:var(--rule);height:10px"></i>how far two runs taking the same update differ</span>
+    </div>
+    <figcaption data-e="e104"><b>Figure 5.</b> 15-minute SlowRun track. Validation loss of the current weights after each epoch, minus the record script on the same seed, in nats per token; lines are means over three seeds. Negative values mean lower loss than the record script. Figure 4 reports final loss after checkpoint averaging, so its numbers differ. Hover or tap for each epoch’s values.</figcaption>
+  </figure>
+
+  <p data-e="e105">In the first epoch, before any token has repeated, testing on its own tokens lowers the loss as much as T³ does, by 0.158 against 0.124. From the second epoch the two separate. Testing on its own tokens falls behind the record script in the fifth epoch and ends 0.046 above it. So early on, testing on its own tokens works as a lookahead, and that help to optimization disappears once tokens repeat. The gain of T³ does not come from lookahead.</p>
+  <p data-e="e106">We also found that the test tokens can come from the same documents. Testing on the later half of each sequence ends at −0.0098, level with T³’s −0.0101.</p>
+  <p data-e="e107">The trial step also has to go downhill. A trial step of zero length computes the ordinary gradient and still ends 0.0025 above the record script, so we read differences of that size as run-to-run variation. Random, uphill and previous-step directions all end in that range, 0.002 to 0.004 above it.</p>
+  <p data-e="e108">Sharpness-aware minimization (SAM)<sup class="ref"><a href="#ref-9">9</a></sup> also takes a gradient at perturbed weights. It differs from T³ in three ways: it moves all the weights uphill, it takes the gradient on the same batch, and it updates with that gradient alone. On the 300M recipe of Table 1 (one seed), the best of seven perturbation sizes ends 0.0068 below the baseline, about one seed standard deviation, while T³ on the same seed ends 0.0246 below. A SAM step also takes 1.94 times as long.</p>
+  <p data-e="e109">Each gradient in a T³ step comes from half the batch, so a smaller batch could be what helps. We ran the record script with half the batch and twice as many steps, its learning rates scaled by <span style="white-space:nowrap">1/√2</span>. It ends 0.0054 above the unchanged record script, above it on all three seeds, and 0.0155 above T³.</p>
+</section>
+
+<section id="limits">
+  <h2 data-e="e110">Where it does nothing</h2>
+  <ul class="tight">
+    <li data-e="e111"><strong>One long pass.</strong> We find no reliable gain over a long pass in which no token repeats. On the modded-nanogpt track<sup class="ref"><a href="#ref-10">10</a></sup>, T³ with MuonW stays within 0.003 of the baseline at every run length from 0.21B to 1.7B tokens, which is within the run-to-run noise of that track.</li>
+  </ul>
+</section>
+
+<section id="conclusion">
+  <h2 data-e="e133">Conclusion</h2>
+  <p data-e="e134">T³ is a cheap meta-gradient step for data-constrained pretraining. Each step takes a trial step on half of the batch and tests it on the other half, and the first-order version adds 6 to 9% to step time. Added to tuned recipes with nothing else changed, it lowers validation loss by 0.012 to 0.015 nats per token at 300M, 600M and 1.4B parameters, and T³ scripts hold the current records on both SlowRun<sup class="ref"><a href="#ref-4">4</a></sup> tracks.</p>
+  <p data-e="e135">The gain comes from testing on tokens the trial step did not use. Testing on its own tokens works only as a lookahead and helps only until tokens start to repeat, and a smaller batch, an uphill trial step or SAM do not reproduce the gain.</p>
+</section>
+
+<section class="refs" id="refs">
+  <h2 data-e="e116">References</h2>
+  <ol>
+    <li id="ref-1"><b>1</b><div data-e="e117">Villalobos et al. <a href="https://arxiv.org/abs/2211.04325">Will We Run Out of Data? Limits of LLM Scaling Based on Human-Generated Data</a>. ICML 2024.</div></li>
+    <li id="ref-2"><b>2</b><div data-e="e118">Muennighoff et al. <a href="https://arxiv.org/abs/2305.16264">Scaling Data-Constrained Language Models</a>. NeurIPS 2023.</div></li>
+    <li id="ref-3"><b>3</b><div data-e="e119">Kim, Kotha, Liang and Hashimoto. <a href="https://arxiv.org/abs/2509.14786">Pre-training under Infinite Compute</a>. arXiv 2025.</div></li>
+    <li id="ref-4"><b>4</b><div data-e="e120">qlabs-eng. <a href="https://github.com/qlabs-eng/slowrun">SlowRun: a fixed-data, fixed-time language-model pretraining benchmark</a>. 2026.</div></li>
+    <li id="ref-5"><b>5</b><div data-e="e121">Finn, Abbeel and Levine. <a href="https://arxiv.org/abs/1703.03400">Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks</a>. ICML 2017.</div></li>
+    <li id="ref-6"><b>6</b><div data-e="e122">Nichol, Achiam and Schulman. <a href="https://arxiv.org/abs/1803.02999">On First-Order Meta-Learning Algorithms</a>. arXiv 2018.</div></li>
+    <li id="ref-7"><b>7</b><div data-e="e123">Li et al. <a href="https://arxiv.org/abs/2406.11794">DataComp-LM: In Search of the Next Generation of Training Sets for Language Models</a>. arXiv 2024.</div></li>
+    <li id="ref-8"><b>8</b><div data-e="e124">Penedo et al. <a href="https://arxiv.org/abs/2406.17557">The FineWeb Datasets: Decanting the Web for the Finest Text Data at Scale</a>. 2024.</div></li>
+    <li id="ref-9"><b>9</b><div data-e="e125">Foret et al. <a href="https://arxiv.org/abs/2010.01412">Sharpness-Aware Minimization for Efficiently Improving Generalization</a>. ICLR 2021.</div></li>
+    <li id="ref-10"><b>10</b><div data-e="e126">Jordan et al. <a href="https://github.com/KellerJordan/modded-nanogpt">modded-nanogpt: Speedrunning the NanoGPT baseline</a>. 2024.</div></li>
+  </ol>
+</section>
+
+<section id="cite">
+  <h2 data-e="e127">Citation</h2>
+<pre class="bib" id="bib">@misc{dang2026t3,
+  title        = {Training-Time Testing for Data-Constrained Pretraining},
+  author       = {Dang, Xingyu},
+  year         = {2026},
+  howpublished = {Blog post}
+}</pre>
+  <div class="copyrow"><button class="pill solid" id="copy-bib">Copy BibTeX</button></div>
+  <div class="foot"><a href="#top">Back to top</a></div>
+</section>
+
+</div>
+</main>
+
+
+<script>
+const DATA = {"attr_end":{"t3":{"mean":-0.01011,"lo":-0.01329,"hi":-0.00609,"seeds":[-0.01329,-0.00609,-0.01095]},"temporal":{"mean":-0.00978,"lo":-0.01591,"hi":-0.00425,"seeds":[-0.01591,-0.00425,-0.00919]},"self":{"mean":0.01981,"lo":0.01599,"hi":0.02389,"seeds":[0.01599,0.02389,0.01953]},"zero":{"mean":0.00254,"lo":0.00038,"hi":0.00401,"seeds":[0.00038,0.00323,0.00401]},"random":{"mean":0.00196,"lo":0.00069,"hi":0.0043,"seeds":[0.00089,0.0043,0.00069]},"ascent":{"mean":0.00424,"lo":0.0005,"hi":0.00687,"seeds":[0.0005,0.00687,0.00536]},"stale":{"mean":0.00213,"lo":-0.00183,"hi":0.00597,"seeds":[-0.00183,0.00597,0.00225]},"halfbatch":{"mean":0.00543,"lo":0.00153,"hi":0.00742,"seeds":[0.00153,0.00732,0.00742]}},"attr_traj":{"t3":[{"e":1,"m":-0.1238,"lo":-0.15181,"hi":-0.10631},{"e":2,"m":-0.06479,"lo":-0.11789,"hi":-0.03182},{"e":3,"m":-0.07247,"lo":-0.09616,"hi":-0.04485},{"e":4,"m":-0.05321,"lo":-0.06405,"hi":-0.03746},{"e":5,"m":-0.03208,"lo":-0.0451,"hi":-0.01986},{"e":6,"m":-0.0178,"lo":-0.02848,"hi":-0.00162},{"e":7,"m":-0.01969,"lo":-0.02275,"hi":-0.01701},{"e":8,"m":-0.01402,"lo":-0.01596,"hi":-0.01176},{"e":9,"m":-0.01483,"lo":-0.02037,"hi":-0.00879},{"e":10,"m":-0.0136,"lo":-0.01464,"hi":-0.01279},{"e":11,"m":-0.01455,"lo":-0.02065,"hi":-0.01114},{"e":12,"m":-0.0114,"lo":-0.01385,"hi":-0.00811},{"e":13,"m":-0.01012,"lo":-0.01241,"hi":-0.00661},{"e":14,"m":-0.00696,"lo":-0.00833,"hi":-0.00438},{"e":15,"m":-0.01009,"lo":-0.01219,"hi":-0.00637}],"self":[{"e":1,"m":-0.15798,"lo":-0.16444,"hi":-0.14937},{"e":2,"m":-0.03389,"lo":-0.0694,"hi":-0.01365},{"e":3,"m":-0.01054,"lo":-0.03001,"hi":0.01247},{"e":4,"m":-0.01115,"lo":-0.01331,"hi":-0.00976},{"e":5,"m":0.00711,"lo":-0.00802,"hi":0.01801},{"e":6,"m":0.02809,"lo":0.01324,"hi":0.04324},{"e":7,"m":0.02345,"lo":0.02055,"hi":0.02663},{"e":8,"m":0.02535,"lo":0.02491,"hi":0.02566},{"e":9,"m":0.0266,"lo":0.02372,"hi":0.03109},{"e":10,"m":0.03375,"lo":0.03052,"hi":0.03669},{"e":11,"m":0.03284,"lo":0.03011,"hi":0.03471},{"e":12,"m":0.02506,"lo":0.02253,"hi":0.02774},{"e":13,"m":0.03025,"lo":0.0238,"hi":0.03529},{"e":14,"m":0.03258,"lo":0.02816,"hi":0.03778},{"e":15,"m":0.04589,"lo":0.04252,"hi":0.05142}]},"attr_band":{"1":0.02909,"2":0.02532,"3":0.02245,"4":0.02115,"5":0.01318,"6":0.01062,"7":0.00438,"8":0.00265,"9":0.00324,"10":0.00153,"11":0.01349,"12":0.00513,"13":0.00223,"14":0.0016,"15":0.00232,"avg":0.00344}};
+(() => {
+'use strict';
+
+const num = (v, d = 4) => (v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+const sgn = (v, d = 4) => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toFixed(d);
+const charts = {};
+
+// ---------- bar figures: HTML, sized in percent, so they need no redraw logic of their own ----------
+const E = (tag, cls, parent, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+};
+
+// Pretraining card: the fixed-data rows of Table 1, drawn with the same bars as Figure 3.
+const GAINS = [{ s: '300M', m: -0.0144 }, { s: '600M', m: -0.0122 }, { s: '1.4B', m: -0.0151 }];
+charts.gains = el => {
+  const lo = -0.019, zero = 0.62;   // zero sits at 62% of the width; the values are printed to its right
+  el.replaceChildren();
+  const box = E('div', 'mb compact', el);
+  box.style.setProperty('--z', (zero * 100) + '%');
+  box.setAttribute('role', 'img');
+  box.setAttribute('aria-label', 'T³ minus baseline: ' + GAINS.map(g => `${g.s} ${num(g.m)}`).join(', '));
+  E('span', null, E('div', 'mb-zero', box), 'baseline');
+  GAINS.forEach((g, i) => {
+    const row = E('div', 'mb-row' + (i === 0 ? ' strong' : ''), box);
+    E('span', 'mb-name', row, g.s);
+    const plot = E('span', 'mb-plot', row);
+    E('i', 'mb-bar', plot).style.cssText = `width:${(g.m / lo * zero * 100).toFixed(2)}%;background:var(--A);right:calc(100% - var(--z));border-radius:3px 0 0 3px`;
+    E('span', 'mb-val', plot, num(g.m)).style.left = 'calc(var(--z) + 8px)';
+  });
+};
+
+// Exact step against first-order step: 300M on the fixed DCLM pool, final validation loss on common hardware.
+// One seed per cell, each version tuned on its own; the trial step in these runs is a plain gradient step.
+const EXACT = [{ p: 4, fo: 3.656843, ex: 3.645815 }, { p: 8, fo: 3.540902, ex: 3.537328 }, { p: 16, fo: 3.541196, ex: 3.537695 }, { p: 24, fo: 3.552253, ex: 3.554587 }];
+charts.exact = el => {
+  const d0 = -0.016, d1 = 0.012, SD = 0.006, pct = v => ((v - d0) / (d1 - d0) * 100).toFixed(2) + '%';
+  el.replaceChildren();
+  const box = E('div', 'mb', el), tip = E('div', 'tip', el);
+  box.style.setProperty('--z', pct(0));
+  const head = E('div', 'mb-head', box);
+  E('span', 'mb-name', head);
+  const hp = E('span', 'mb-plot', head);
+  E('span', 'mb-dir l', hp, '← exact step lower');
+  E('span', 'mb-dir r', hp, 'first-order step lower →');
+  EXACT.forEach(r => {
+    const d = r.ex - r.fo, neg = d < 0, wd = (Math.abs(d) / (d1 - d0) * 100).toFixed(2);
+    const row = E('div', 'mb-row hit', box);
+    E('span', 'mb-name', row, `${r.p} passes`);
+    const plot = E('span', 'mb-plot', row);
+    E('i', 'mb-band', plot).style.cssText = `left:${pct(-SD)};width:${(2 * SD / (d1 - d0) * 100).toFixed(2)}%`;
+    E('i', 'mb-bar', plot).style.cssText = `width:${wd}%;background:var(--self);` +
+      (neg ? 'right:calc(100% - var(--z));border-radius:3px 0 0 3px' : 'left:var(--z);border-radius:0 3px 3px 0');
+    E('span', 'mb-val', plot, sgn(d)).style.cssText = neg ? `right:calc(100% - var(--z) + ${wd}% + 8px)` : `left:calc(var(--z) + ${wd}% + 8px)`;
+    row.tabIndex = 0;
+    const show = e => {
+      tip.innerHTML = `<b>${r.p} passes</b><br>first-order ${r.fo.toFixed(4)}<br>exact ${r.ex.toFixed(4)}`;
+      const x = e.clientX ? e.clientX - el.getBoundingClientRect().left : 24;
+      tip.style.left = Math.max(0, Math.min(x + 14, el.clientWidth - 230)) + 'px';
+      tip.style.top = (row.offsetTop + row.offsetHeight + 2) + 'px';
+      tip.classList.add('on');
+    };
+    row.addEventListener('pointermove', show);
+    row.addEventListener('click', show);
+    row.addEventListener('focus', show);
+    row.addEventListener('blur', () => tip.classList.remove('on'));
+    row.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') tip.classList.remove('on'); });
+  });
+};
+
+// Figure 4 and the held-out card: where each grading variant ends (15-minute SlowRun).
+// DATA.attr_end: final loss after the script's checkpoint average minus the record script, three seeds each.
+const ENDS = [
+  { g: 'Tested on other tokens' },
+  { k: 't3', name: 'Other half of the batch (T³)', c: '--A', strong: true },
+  { k: 'temporal', name: 'Later half of each sequence', c: '--A' },
+  { g: 'Tested on its own tokens' },
+  { k: 'self', name: 'Own tokens', c: '--self' },
+  { g: 'Trial step not downhill' },
+  { k: 'zero', name: 'Zero-length trial step', c: '--base' },
+  { k: 'random', name: 'Random direction', c: '--base' },
+  { k: 'ascent', name: 'Uphill direction', c: '--base' },
+  { k: 'stale', name: 'Previous step’s direction', c: '--base' },
+  { g: 'No trial step, smaller batch' },
+  { k: 'halfbatch', name: 'Half the batch', c: '--base' },
+];
+// The card under the summary: T³ and three alternatives that end above the baseline, in the card's own words.
+const ENDS_CARD = [['t3', 'T³'], ['ascent', 'Uphill trial step'], ['halfbatch', 'Half the batch, no trial step'], ['self', 'Second gradient on the same half']];
+charts.ends = el => {
+  const compact = el.dataset.rows === 'card';
+  const rows = compact ? ENDS_CARD.map(([k, short]) => ({ ...ENDS.find(r => r.k === k), short })) : ENDS;
+  const [d0, d1] = compact ? [-0.016, 0.026] : [-0.02, 0.03];
+  el.replaceChildren();
+  const box = E('div', compact ? 'mb compact' : 'mb', el);
+  box.style.setProperty('--z', (-d0 / (d1 - d0) * 100).toFixed(2) + '%');
+  const tip = compact ? null : E('div', 'tip', el);
+  if (compact) {
+    box.setAttribute('role', 'img');
+    box.setAttribute('aria-label', 'Final loss minus the baseline: ' + rows.map(r => `${r.short} ${sgn(DATA.attr_end[r.k].mean)}`).join(', '));
+    E('span', null, E('div', 'mb-zero', box), 'baseline');
+  } else {
+    const head = E('div', 'mb-head', box);
+    E('span', 'mb-name', head);
+    const plot = E('span', 'mb-plot', head);
+    E('span', 'mb-dir l', plot, '← lower loss');
+    E('span', 'mb-dir r', plot, 'higher loss →');
+  }
+  rows.forEach(r => {
+    if (r.g) {
+      const group = E('div', 'mb-group', box);
+      E('span', 'mb-name', group, r.g);
+      E('span', 'mb-plot', group);
+      return;
+    }
+    const d = DATA.attr_end[r.k], neg = d.mean < 0, w = (Math.abs(d.mean) / (d1 - d0) * 100).toFixed(2);
+    const row = E('div', 'mb-row' + (r.strong ? ' strong' : ''), box);
+    E('span', 'mb-name', row, compact ? r.short : r.name);
+    const plot = E('span', 'mb-plot', row);
+    E('i', 'mb-bar', plot).style.cssText = `width:${w}%;background:var(${r.c});` +
+      (neg ? 'right:calc(100% - var(--z));border-radius:3px 0 0 3px' : 'left:var(--z);border-radius:0 3px 3px 0');
+    if (compact) {   // the number sits across the zero line from its bar, so it never runs off the card
+      E('span', 'mb-val', plot, sgn(d.mean)).style.cssText = neg ? 'left:calc(var(--z) + 8px)' : 'right:calc(100% - var(--z) + 8px)';
+      return;
+    }
+    E('span', 'mb-val', plot, sgn(d.mean)).style.cssText = neg ? `right:calc(100% - var(--z) + ${w}% + 8px)` : `left:calc(var(--z) + ${w}% + 8px)`;
+    row.classList.add('hit');
+    row.tabIndex = 0;
+    const show = e => {
+      tip.innerHTML = `<b>${r.name}</b><br>mean ${sgn(d.mean)}<br>seeds ${d.seeds.map(v => sgn(v)).join(', ')}`;
+      const x = e.clientX ? e.clientX - el.getBoundingClientRect().left : 24;
+      tip.style.left = Math.max(0, Math.min(x + 14, el.clientWidth - 230)) + 'px';
+      tip.style.top = (row.offsetTop + row.offsetHeight + 2) + 'px';
+      tip.classList.add('on');
+    };
+    row.addEventListener('pointermove', show);
+    row.addEventListener('click', show); // a tap: stays until the next tap elsewhere
+    row.addEventListener('focus', show);
+    row.addEventListener('blur', () => tip.classList.remove('on'));
+    row.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') tip.classList.remove('on'); });
+  });
+};
+
+// ---------- Figure 2: T³ steps drawn on two made-up loss surfaces ----------
+// A drawing of what the step computes. The surfaces are invented; nothing here is measured.
+const NS = 'http://www.w3.org/2000/svg';
+const BOX = { x0: -3.1, x1: 3.1, y0: -1.75, y1: 1.75 };
+// a bowl in gently bent coordinates, so its contour lines look like terrain and it still has one minimum
+const surface = (cx, cy, al, k1, k2) => (x, y) => {
+  const u = x + 0.35 * Math.sin(0.9 * y + 0.4) - cx, v = y + 0.25 * Math.sin(0.8 * x - 0.3) - cy;
+  const p = Math.cos(al) * u + Math.sin(al) * v, q = Math.cos(al) * v - Math.sin(al) * u;
+  return 0.5 * (k1 * p * p + k2 * q * q);
+};
+const bottom = (cx, cy) => { let x = cx, y = cy; for (let i = 0; i < 40; i++) { x = cx - 0.35 * Math.sin(0.9 * y + 0.4); y = cy - 0.25 * Math.sin(0.8 * x - 0.3); } return [x, y]; };
+const LOSS_A = surface(-0.7, 0.3, 0.35, 0.6, 1.3), LOSS_Q = surface(0.6, -0.25, -0.45, 1.2, 0.55);
+const MIN_A = bottom(-0.7, 0.3), MIN_Q = bottom(0.6, -0.25);
+const slope = (f, w) => { const h = 1e-3; return [(f(w[0] + h, w[1]) - f(w[0] - h, w[1])) / (2 * h), (f(w[0], w[1] + h) - f(w[0], w[1] - h)) / (2 * h)]; };
+const STEP_LR = 0.34, STEP_CLIP = 3.0, STARTS = [[2.6, 1.3], [2.3, -1.4], [2.8, -0.2]];
+const clipped = g => { const n = Math.hypot(g[0], g[1]); return n > STEP_CLIP ? [g[0] * STEP_CLIP / n, g[1] * STEP_CLIP / n] : g; };
+// one T³ step from th: a and q are the two downhill moves, upd their mean
+// qf is Q's downhill move read at phi and carried back unchanged (first-order). qx is the same move carried back
+// through the trial step (exact): multiplied by the transpose of d(phi)/d(theta) = I - eta (I - u u^T) H_A / |g_A|.
+function planStep(th, eta, exact) {
+  const gA = slope(LOSS_A, th), nA = Math.hypot(gA[0], gA[1]) || 1, u = [gA[0] / nA, gA[1] / nA];
+  const phi = [th[0] - eta * u[0], th[1] - eta * u[1]], gQ = slope(LOSS_Q, phi);
+  const h = 1e-3, f = LOSS_A, x = th[0], y = th[1], f0 = f(x, y);
+  const xx = (f(x + h, y) - 2 * f0 + f(x - h, y)) / (h * h), yy = (f(x, y + h) - 2 * f0 + f(x, y - h)) / (h * h);
+  const xy = (f(x + h, y + h) - f(x + h, y - h) - f(x - h, y + h) + f(x - h, y - h)) / (4 * h * h);
+  const along = u[0] * gQ[0] + u[1] * gQ[1], v = [gQ[0] - along * u[0], gQ[1] - along * u[1]];
+  const gX = [gQ[0] - eta / nA * (xx * v[0] + xy * v[1]), gQ[1] - eta / nA * (xy * v[0] + yy * v[1])];
+  const a = clipped(gA).map(v => -STEP_LR * v), qf = clipped(gQ).map(v => -STEP_LR * v), qx = clipped(gX).map(v => -STEP_LR * v);
+  const q = exact ? qx : qf, other = exact ? qf : qx;
+  const upd = [(a[0] + q[0]) / 2, (a[1] + q[1]) / 2];
+  return { th, phi, a, q, qf, other, upd, next: [th[0] + upd[0], th[1] + upd[1]] };
+}
+// contour lines by marching squares, drawn once per size onto the canvas
+function drawContours(ctx, f, levels, toWorld, w, h, color) {
+  const n = 4, cols = Math.ceil(w / n), rows = Math.ceil(h / n), val = new Float32Array((cols + 1) * (rows + 1));
+  for (let j = 0; j <= rows; j++) for (let i = 0; i <= cols; i++) { const p = toWorld(i * n, j * n); val[j * (cols + 1) + i] = f(p[0], p[1]); }
+  const SEG = { 1: [[3, 2]], 2: [[2, 1]], 3: [[3, 1]], 4: [[0, 1]], 5: [[3, 0], [2, 1]], 6: [[0, 2]], 7: [[3, 0]], 8: [[3, 0]], 9: [[0, 2]], 10: [[0, 1], [3, 2]], 11: [[0, 1]], 12: [[3, 1]], 13: [[2, 1]], 14: [[3, 2]] };
+  ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.beginPath();
+  for (const lv of levels) for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    const tl = val[j * (cols + 1) + i], tr = val[j * (cols + 1) + i + 1], bl = val[(j + 1) * (cols + 1) + i], br = val[(j + 1) * (cols + 1) + i + 1];
+    const idx = (tl > lv ? 8 : 0) | (tr > lv ? 4 : 0) | (br > lv ? 2 : 0) | (bl > lv ? 1 : 0);
+    if (!SEG[idx]) continue;
+    const edge = e => e === 0 ? [i + (lv - tl) / (tr - tl), j] : e === 1 ? [i + 1, j + (lv - tr) / (br - tr)] : e === 2 ? [i + (lv - bl) / (br - bl), j + 1] : [i, j + (lv - tl) / (bl - tl)];
+    for (const [e0, e1] of SEG[idx]) { const p = edge(e0), q = edge(e1); ctx.moveTo(p[0] * n, p[1] * n); ctx.lineTo(q[0] * n, q[1] * n); }
+  }
+  ctx.stroke();
+}
+const STAGES = ['Downhill on A, read at θ', 'Trial step of length η, to φ', 'Downhill on Q, read at φ', 'Undo the trial step', 'Average the two arrows', 'Take the step'];
+const CUTS = [0, 0.18, 0.4, 0.58, 0.76, 0.88, 1];
+charts.step = el => {
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const col = { A: css('--A'), Q: css('--Q'), ink: css('--ink'), rule: css('--faint'), bg: css('--bg'), muted: css('--muted'), panel: css('--panel'), rule2: css('--rule-2'), aWash: css('--a-wash'), qWash: css('--q-wash') };
+  el.replaceChildren();
+  const stage = E('div', 'st-stage', el), cv = E('canvas', null, stage), svg = document.createElementNS(NS, 'svg');
+  stage.appendChild(svg);
+  const strip = document.createElementNS(NS, 'svg');
+  E('div', 'st-strip', el).appendChild(strip);
+  strip.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Contour lines of two loss surfaces, one for half A and one for half Q. From the current weights, a trial step of fixed length goes downhill on A. The downhill direction on Q is read at that trial point and carried back, through the trial step in the exact version and unchanged in the first-order one, and the step taken is the average of the two directions. The steps repeat and trace a path toward the region between the two minima.');
+  const play = document.getElementById('step-play'), slider = document.getElementById('step-eta'), out = document.getElementById('step-eta-o'), now = document.getElementById('step-now');
+  const S = { eta: +slider.value, exact: true, on: !still, seen: false, k: 0, run: 0, th: STARTS[0], trail: [], ph: still ? 0.87 : 0, hold: 0, last: 0, raf: 0 };
+  let w = 0, h = 0, sc = 1, ox = 0, oy = 0;
+  const X = x => ox + (x - BOX.x0) * sc, Y = y => oy + (y - BOX.y0) * sc;
+  const f1 = v => v.toFixed(1);
+  const line = (x0, y0, x1, y1, c, wd, extra = '') => `<line x1="${f1(x0)}" y1="${f1(y0)}" x2="${f1(x1)}" y2="${f1(y1)}" stroke="${c}" stroke-width="${wd}" stroke-linecap="round" ${extra}/>`;
+  const arrow = (p, q, c, wd, op = 1) => {
+    const x0 = X(p[0]), y0 = Y(p[1]), x1 = X(q[0]), y1 = Y(q[1]), L = Math.hypot(x1 - x0, y1 - y0);
+    if (L < 1.5 || op <= 0.01) return '';
+    const ux = (x1 - x0) / L, uy = (y1 - y0) / L, hd = Math.min(9, L * 0.6), bx = x1 - ux * hd, by = y1 - uy * hd;
+    return `<g opacity="${op.toFixed(2)}">${line(x0, y0, bx, by, c, wd)}<polygon points="${f1(x1)},${f1(y1)} ${f1(bx - uy * hd * 0.5)},${f1(by + ux * hd * 0.5)} ${f1(bx + uy * hd * 0.5)},${f1(by - ux * hd * 0.5)}" fill="${c}"/></g>`;
+  };
+  const text = (x, y, s, c, extra = '') => `<text x="${f1(x)}" y="${f1(y)}" style="fill:${c};paint-order:stroke;stroke:${col.bg};stroke-width:4px;stroke-linejoin:round" ${extra}>${s}</text>`;
+  const ease = t => t < 0.5 ? 2 * t * t : 1 - (2 - 2 * t) * (2 - 2 * t) / 2;
+  const seg = i => ease(Math.max(0, Math.min(1, (S.ph - CUTS[i]) / (CUTS[i + 1] - CUTS[i]))));
+  const add = (p, v, t = 1) => [p[0] + v[0] * t, p[1] + v[1] * t];
+
+  function layout() {
+    w = Math.max(280, Math.floor(el.clientWidth)); h = Math.round(Math.max(250, Math.min(470, w * 0.56)));
+    sc = Math.min(w / (BOX.x1 - BOX.x0), h / (BOX.y1 - BOX.y0)); ox = (w - (BOX.x1 - BOX.x0) * sc) / 2; oy = (h - (BOX.y1 - BOX.y0) * sc) / 2;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = w * dpr; cv.height = h * dpr; cv.style.height = h + 'px';
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`); svg.setAttribute('width', w); svg.setAttribute('height', h);
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    const toWorld = (px, py) => [BOX.x0 + (px - ox) / sc, BOX.y0 + (py - oy) / sc], levels = [0.06, 0.25, 0.6, 1.1, 1.8, 2.7, 3.8, 5.1, 6.6, 8.3];
+    ctx.globalAlpha = 0.34; drawContours(ctx, LOSS_A, levels, toWorld, w, h, col.A);
+    ctx.globalAlpha = 0.4; drawContours(ctx, LOSS_Q, levels, toWorld, w, h, col.Q);
+    ctx.globalAlpha = 1;
+    draw();
+  }
+
+  function draw() {
+    const P = planStep(S.th, S.eta, S.exact), s1 = seg(0), s2 = seg(1), s3 = seg(2), s4 = seg(3), s5 = seg(4), s6 = seg(5);
+    const here = add(P.th, P.upd, s6), fade = 1 - s6;
+    let g = '';
+    // where each surface is lowest
+    g += `<circle cx="${f1(X(MIN_A[0]))}" cy="${f1(Y(MIN_A[1]))}" r="3.5" fill="${col.A}"/>` + text(X(MIN_A[0]) - 9, Y(MIN_A[1]) + 4, 'lowest on A', col.A, 'text-anchor="end"');
+    g += `<circle cx="${f1(X(MIN_Q[0]))}" cy="${f1(Y(MIN_Q[1]))}" r="3.5" fill="${col.Q}"/>` + text(X(MIN_Q[0]) + 9, Y(MIN_Q[1]) + 4, 'lowest on Q', col.Q);
+    // the path so far
+    const pts = S.trail.concat([here]);
+    if (pts.length > 1) g += `<polyline points="${pts.map(p => f1(X(p[0])) + ',' + f1(Y(p[1]))).join(' ')}" fill="none" stroke="${col.ink}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+    for (const p of S.trail) g += `<circle cx="${f1(X(p[0]))}" cy="${f1(Y(p[1]))}" r="2.2" fill="${col.ink}"/>`;
+    // the radius, the trial step and the trial point
+    const ring = Math.min(s2, 1 - s4) * (S.eta > 0 ? 1 : 0);
+    if (ring > 0.01) {
+      g += `<circle cx="${f1(X(P.th[0]))}" cy="${f1(Y(P.th[1]))}" r="${f1(S.eta * sc)}" fill="none" stroke="${col.rule}" stroke-width="1" stroke-dasharray="2 4" opacity="${ring.toFixed(2)}"/>`;
+      const tip = add(P.th, [P.phi[0] - P.th[0], P.phi[1] - P.th[1]], s2);
+      g += `<g opacity="${(1 - s4).toFixed(2)}">` + line(X(P.th[0]), Y(P.th[1]), X(tip[0]), Y(tip[1]), col.A, 1.6, 'stroke-dasharray="4 4"');
+      if (s2 > 0.9) {
+        g += `<circle cx="${f1(X(P.phi[0]))}" cy="${f1(Y(P.phi[1]))}" r="4.5" fill="${col.bg}" stroke="${col.ink}" stroke-width="1.6"/>`;
+        // φ and η sit beside the trial step, on the side Q's arrow does not leave from
+        const dx = P.phi[0] - P.th[0], dy = P.phi[1] - P.th[1], n = Math.hypot(dx, dy) || 1, sd = (-dy * P.q[0] + dx * P.q[1]) > 0 ? -1 : 1;
+        const px = -dy / n * sd, py = dx / n * sd;
+        g += text(X(P.phi[0]) + px * 15, Y(P.phi[1]) + py * 15 + 6, 'φ', col.ink, 'class="sym" text-anchor="middle"');
+        if (S.eta * sc > 40) g += text((X(P.th[0]) + X(P.phi[0])) / 2 + px * 13, (Y(P.th[1]) + Y(P.phi[1])) / 2 + py * 13 + 5, 'η', col.muted, 'class="sym" text-anchor="middle"');
+      }
+      g += '</g>';
+    }
+    // the two downhill arrows; Q's is read at the trial point, then carried back
+    g += arrow(P.th, add(P.th, P.a, s1), col.A, 2.4, fade);
+    if (s3 > 0) {   // on the way back the exact arrow turns; the faint one is the other version's
+      const o = add(P.phi, [P.th[0] - P.phi[0], P.th[1] - P.phi[1]], s4), qq = [P.qf[0] + (P.q[0] - P.qf[0]) * s4, P.qf[1] + (P.q[1] - P.qf[1]) * s4];
+      if (S.eta > 0 && s4 > 0) g += arrow(P.th, add(P.th, P.other), col.Q, 2, 0.3 * s4 * fade);
+      g += arrow(o, add(o, qq, s3), col.Q, 2.4, fade);
+    }
+    // their average is the step
+    if (s5 > 0) {
+      const ta = add(P.th, P.a), tq = add(P.th, P.q);
+      g += `<g opacity="${(s5 * fade).toFixed(2)}">` + line(X(ta[0]), Y(ta[1]), X(tq[0]), Y(tq[1]), col.rule, 1, 'stroke-dasharray="2 3"') + '</g>';
+      g += arrow(here, add(P.th, P.upd, Math.max(s5, s6)), col.ink, 2.6, s5);
+    }
+    g += `<circle cx="${f1(X(here[0]))}" cy="${f1(Y(here[1]))}" r="5.5" fill="${col.ink}" stroke="${col.bg}" stroke-width="2"/>`;
+    const bk = Math.hypot(P.upd[0], P.upd[1]) || 1;   // θ's label trails behind the direction of travel
+    g += text(X(here[0]) - P.upd[0] / bk * 17, Y(here[1]) - P.upd[1] / bk * 17 + 6, 'θ', col.ink, 'class="sym" text-anchor="middle"');
+    svg.innerHTML = g;
+    // the strip: the trial step laid flat, with each half's loss change drawn above it
+    const SH = 136, L = 26, R = 84, top = 32, base = SH - 24, zero = top + (base - 12 - top) * 0.3, N = 32;
+    const at = t => [P.th[0] + (P.phi[0] - P.th[0]) * t, P.th[1] + (P.phi[1] - P.th[1]) * t];
+    const dA = [], dQ = [], a0 = LOSS_A(P.th[0], P.th[1]), q0 = LOSS_Q(P.th[0], P.th[1]);
+    for (let n = 0; n <= N; n++) { const p = at(n / N); dA.push(LOSS_A(p[0], p[1]) - a0); dQ.push(LOSS_Q(p[0], p[1]) - q0); }
+    // one linear scale per step, with the zero line always at the same height
+    const lo = Math.min(-0.25, ...dA, ...dQ), hi = Math.max(0.05, ...dA, ...dQ), unit = Math.min((base - 12 - zero) / -lo, (zero - top) / hi);
+    const SX = t => L + (w - L - R) * t, SY = v => zero - v * unit;
+    const shown = S.eta > 0 ? (S.hold ? 1 : s2) : 0, upto = shown * N, live = (S.hold ? 1 : fade).toFixed(2);
+    const trace = d => {
+      const pts = []; for (let n = 0; n <= Math.floor(upto); n++) pts.push([SX(n / N), SY(d[n])]);
+      const k = Math.floor(upto), fr = upto - k; if (fr > 0 && k < N) pts.push([SX(upto / N), SY(d[k] + (d[k + 1] - d[k]) * fr)]);
+      return pts;
+    };
+    const curve = (d, c, wash) => {
+      const pts = trace(d); if (pts.length < 2) return '';
+      const line = pts.map(q => f1(q[0]) + ',' + f1(q[1])).join(' '), end = pts[pts.length - 1];
+      return (wash ? `<polygon points="${f1(SX(0))},${f1(zero)} ${line} ${f1(end[0])},${f1(zero)}" fill="${wash}"/>` : '') +
+        `<polyline points="${line}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
+        `<circle cx="${f1(end[0])}" cy="${f1(end[1])}" r="3.5" fill="${c}" stroke="${col.panel}" stroke-width="1.5"/>`;
+    };
+    let st = `<text x="${L - 12}" y="19" style="fill:${col.muted}">Loss along the trial step</text>`;
+    st += `<line x1="${L}" y1="${f1(zero)}" x2="${f1(w - R)}" y2="${f1(zero)}" stroke="${col.rule2}" stroke-width="1"/><text x="${L - 7}" y="${f1(zero + 4)}" text-anchor="end" style="fill:${col.muted}">0</text>`;
+    // the step itself, in the same marks as above: a filled dot at θ, dashes, an open circle at φ
+    st += `<line x1="${L}" y1="${base}" x2="${f1(SX(Math.max(shown, 0.001)))}" y2="${base}" stroke="${col.A}" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round"/>`;
+    st += `<circle cx="${L}" cy="${base}" r="4.5" fill="${col.ink}"/><text x="${L}" y="${SH - 4}" class="sym" text-anchor="middle" style="fill:${col.ink}">θ</text>`;
+    if (shown > 0.9) st += `<circle cx="${f1(SX(1))}" cy="${base}" r="4" fill="${col.panel}" stroke="${col.ink}" stroke-width="1.6"/><text x="${f1(SX(1))}" y="${SH - 4}" class="sym" text-anchor="middle" style="fill:${col.ink}">φ</text>`;
+    st += `<g opacity="${live}">` + curve(dA, col.A, '') + curve(dQ, col.Q, col.qWash);   // only the tested half is shaded
+    if (shown > 0.97) {
+      const ya = SY(dA[N]), yq = SY(dQ[N]), gap = 16, mid = (ya + yq) / 2, up = ya < yq;   // keep the two labels apart
+      const la = Math.abs(ya - yq) < gap ? mid + (up ? -gap / 2 : gap / 2) : ya, lq = Math.abs(ya - yq) < gap ? mid + (up ? gap / 2 : -gap / 2) : yq;
+      st += `<text x="${f1(SX(1) + 11)}" y="${f1(la + 4)}" style="fill:${col.A}"><tspan font-weight="700">A</tspan> ${sgn(dA[N], 2)}</text><text x="${f1(SX(1) + 11)}" y="${f1(lq + 4)}" style="fill:${col.Q}"><tspan font-weight="700">Q</tspan> ${sgn(dQ[N], 2)}</text>`;
+    }
+    st += '</g>';
+    strip.setAttribute('viewBox', `0 0 ${w} ${SH}`); strip.setAttribute('width', w); strip.setAttribute('height', SH);
+    strip.innerHTML = st;
+    const qDrop = dQ[N] < 0;
+    const i = S.hold ? 5 : Math.max(0, CUTS.findIndex(c => c > S.ph) - 1);
+    const label = S.eta === 0 ? 'η = 0: both arrows are read at θ. This is ordinary gradient accumulation.' : `${i + 1}. ` + (i === 3 ? (S.exact ? 'Carry Q’s arrow back through the trial step, which turns it' : 'Carry Q’s arrow back unchanged') : STAGES[i]) + (i === 1 ? (qDrop ? ': Q’s loss falls too' : ': Q’s loss rises') : '');
+    if (now.textContent !== label) now.textContent = label;
+  }
+
+  function advance() {   // commit the step just drawn and move to the next one, or to a new start once the path settles
+    const P = planStep(S.th, S.eta, S.exact);
+    S.trail.push(S.th); S.th = P.next; S.k++;
+    if (S.k >= 14 || Math.hypot(P.upd[0], P.upd[1]) < 0.035) { S.trail.push(S.th); return true; }
+    return false;
+  }
+  function restart() { S.run++; S.th = STARTS[S.run % STARTS.length]; S.trail = []; S.k = 0; S.ph = 0; S.hold = 0; }
+  function tick(t) {
+    S.raf = 0;
+    const dt = Math.min(80, t - (S.last || t)); S.last = t;
+    if (S.hold) { S.hold -= dt; if (S.hold <= 0) restart(); }
+    else {
+      S.ph += dt / (S.k < 2 ? 4000 : 2800);   // the first two steps a little slower, none of them rushed
+      if (S.ph >= 1) { S.ph = 0; if (advance()) { S.hold = 2400; S.ph = 1; } }
+    }
+    draw(); run();
+  }
+  function run() { if (S.on && S.seen && !S.raf) S.raf = requestAnimationFrame(tick); }
+  function halt() { if (S.raf) cancelAnimationFrame(S.raf); S.raf = 0; S.last = 0; }
+
+  play.textContent = still ? 'Next step' : 'Pause';
+  play.onclick = () => {
+    if (still) { if (advance()) restart(); S.ph = 0.87; draw(); return; }
+    S.on = !S.on; play.textContent = S.on ? 'Pause' : 'Play';
+    if (S.on) run(); else halt();
+  };
+  const bx = document.getElementById('step-exact'), bf = document.getElementById('step-first');
+  const pick = exact => {   // switch version and start the same path again, so the two can be compared
+    S.exact = exact; bx.setAttribute('aria-pressed', exact); bf.setAttribute('aria-pressed', !exact);
+    S.th = STARTS[S.run % STARTS.length]; S.trail = []; S.k = 0; S.ph = still ? 0.87 : 0; S.hold = 0; draw();
+  };
+  bx.onclick = () => pick(true); bf.onclick = () => pick(false);
+  slider.oninput = () => { S.eta = +slider.value; out.textContent = S.eta.toFixed(2); draw(); };
+  out.textContent = S.eta.toFixed(2);
+  let width = 0;
+  new ResizeObserver(() => { const nw = Math.floor(el.clientWidth); if (nw !== width) { width = nw; layout(); } }).observe(el);
+  new IntersectionObserver(es => es.forEach(en => { S.seen = en.isIntersecting; if (S.seen) run(); else halt(); }), { threshold: 0.25 }).observe(el);
+  el.stepFigure = { S, draw, advance, pick };   // for checking single frames
+  layout();
+};
+
+// ---------- Figure 4: the two tests after every epoch (15-minute SlowRun) ----------
+// DATA.attr_traj: raw-weight validation loss minus the record script on the same seed, mean and range of three seeds.
+// DATA.attr_band: the 95% range of a three-seed mean for two runs that take the same update.
+const EPOCH_LINES = [{ k: 'self', name: 'Own tokens', c: '--self' }, { k: 't3', name: 'Other half (T³)', c: '--A' }];
+charts.epochs = el => {
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const col = { grid: css('--rule'), zero: css('--faint'), band: css('--rule'), muted: css('--muted'), ink: css('--ink'), bg: css('--bg') };
+  const series = EPOCH_LINES.map(L => ({ ...L, col: css(L.c), pts: DATA.attr_traj[L.k] }));
+  const band = Object.keys(DATA.attr_band).filter(k => k !== 'avg').map(Number).sort((a, b) => a - b).map(e => [e, DATA.attr_band[e]]);
+  el.replaceChildren();
+  const svg = document.createElementNS(NS, 'svg'), tip = E('div', 'tip', el);
+  el.insertBefore(svg, tip);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Validation loss minus the record script after each of 15 epochs. Tested on its own tokens, the loss is 0.158 below the record script after epoch 1, crosses above it in epoch 5 and ends 0.046 above. Tested on the other half, it stays below at every epoch and ends 0.010 below.');
+  let w = 0, h = 0, m = null, X = null, Y = null, shown = 1, raf = 0, hover = null, started = still, guard = 0;
+  const f1 = v => v.toFixed(1), Y0 = -0.17, Y1 = 0.06;
+  const at = (pts, e) => { const i = Math.min(pts.length - 2, Math.max(0, Math.floor(e) - 1)), t = e - (i + 1); return pts[i].m + (pts[i + 1].m - pts[i].m) * Math.max(0, Math.min(1, t)); };
+  function draw() {
+    const wide = w >= 560, last = 1 + 14 * shown;
+    let g = `<defs><clipPath id="ep-clip"><rect x="${f1(X(1) - 8)}" y="0" width="${f1(X(last) - X(1) + 8)}" height="${h}"/></clipPath></defs>`;
+    for (const t of [-0.15, -0.1, -0.05, 0.05]) g += `<line x1="${m.l}" x2="${w - m.r}" y1="${f1(Y(t))}" y2="${f1(Y(t))}" stroke="${col.grid}" shape-rendering="crispEdges"/>` + `<text x="${m.l - 8}" y="${f1(Y(t) + 4)}" text-anchor="end">${sgn(t, 2)}</text>`;
+    g += `<path d="M${band.map(([e, b]) => f1(X(e)) + ',' + f1(Y(b))).join('L')}L${band.slice().reverse().map(([e, b]) => f1(X(e)) + ',' + f1(Y(-b))).join('L')}Z" fill="${col.band}" opacity="0.75"/>`;
+    g += `<line x1="${m.l}" x2="${w - m.r}" y1="${f1(Y(0))}" y2="${f1(Y(0))}" stroke="${col.zero}" shape-rendering="crispEdges"/><text x="${m.l - 8}" y="${f1(Y(0) + 4)}" text-anchor="end">0</text>`;
+    g += `<text x="${w - m.r}" y="${f1(Y(0) - 7)}" text-anchor="end">record script</text>`;
+    for (const e of [1, 5, 10, 15]) g += `<text x="${f1(X(e))}" y="${h - m.b + 18}" text-anchor="middle">${e}</text>`;
+    g += `<text x="${f1((m.l + w - m.r) / 2)}" y="${h - 4}" text-anchor="middle">Epoch</text>`;
+    if (hover) g += `<line x1="${f1(X(hover))}" x2="${f1(X(hover))}" y1="${m.t}" y2="${h - m.b}" stroke="${col.zero}" stroke-dasharray="2 3"/>`;
+    for (const s of series) {
+      g += `<polyline clip-path="url(#ep-clip)" points="${s.pts.map(p => f1(X(p.e)) + ',' + f1(Y(p.m))).join(' ')}" fill="none" stroke="${s.col}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+      const e = hover && shown === 1 ? hover : last, v = at(s.pts, e);
+      g += `<circle cx="${f1(X(e))}" cy="${f1(Y(v))}" r="4.5" fill="${s.col}" stroke="${col.bg}" stroke-width="2"/>`;
+      if (shown === 1 && wide && !hover) g += `<text x="${f1(X(15) + 10)}" y="${f1(Y(s.pts[14].m) + 4)}" style="fill:${col.ink}">${s.name} ${sgn(s.pts[14].m, 3)}</text>`;
+    }
+    svg.innerHTML = g;
+  }
+  function layout() {
+    w = Math.max(280, Math.floor(el.clientWidth)); h = w >= 560 ? 330 : 280;
+    m = { l: 46, r: w >= 560 ? 150 : 14, t: 14, b: 42 };
+    X = e => m.l + (e - 1) / 14 * (w - m.l - m.r); Y = v => m.t + (Y1 - v) / (Y1 - Y0) * (h - m.t - m.b);
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`); svg.setAttribute('width', w); svg.setAttribute('height', h);
+    draw();
+  }
+  function play() {
+    cancelAnimationFrame(raf); clearTimeout(guard); shown = 0; hover = null; tip.classList.remove('on');
+    guard = setTimeout(() => { if (shown < 1) { cancelAnimationFrame(raf); shown = 1; draw(); } }, 4500);
+    let t0 = 0;
+    const step = t => { t0 = t0 || t; shown = Math.min(1, (t - t0) / 2600); draw(); if (shown < 1) raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step);
+  }
+  const point = ev => {
+    if (shown < 1) return;
+    const r = svg.getBoundingClientRect(), e = Math.max(1, Math.min(15, Math.round(1 + (ev.clientX - r.left - m.l) / (w - m.l - m.r) * 14)));
+    hover = e; draw();
+    tip.innerHTML = `<b>After epoch ${e}</b>` + series.map(s => `<br>${s.name} ${sgn(s.pts[e - 1].m, 3)} <span style="color:var(--muted)">(seeds ${sgn(s.pts[e - 1].lo, 3)} to ${sgn(s.pts[e - 1].hi, 3)})</span>`).join('') + `<br><span style="color:var(--muted)">same-update runs differ by ±${DATA.attr_band[e].toFixed(3)}</span>`;
+    tip.style.left = Math.max(0, Math.min(X(e) + 14, w - 250)) + 'px'; tip.style.top = (m.t + 6) + 'px'; tip.classList.add('on');
+  };
+  svg.addEventListener('pointermove', point);
+  svg.addEventListener('click', point);
+  svg.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch') { hover = null; tip.classList.remove('on'); draw(); } });
+  const again = document.getElementById('epochs-play');
+  if (still) again.hidden = true; else again.onclick = play;
+  let width = 0;
+  new ResizeObserver(() => { const nw = Math.floor(el.clientWidth); if (nw !== width) { width = nw; layout(); } }).observe(el);
+  new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting && !started) { started = true; play(); } }), { threshold: 0.5 }).observe(el);
+  layout();
+};
+
+// ---------- wiring ----------
+function wire() {
+  // code <-> equation linking
+  const link = (k, on) => document.querySelectorAll(`[data-k="${k}"]`).forEach(n => n.classList.toggle('on', on));
+  let pinned = null; // the term a tap or click left highlighted
+  document.querySelectorAll('#t3code .ln, .linkable, .mk').forEach(n => {
+    const k = n.dataset.k;
+    n.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') link(k, true); });
+    n.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch' && pinned !== k) link(k, false); });
+    n.addEventListener('click', () => {
+      if (pinned) link(pinned, false);
+      pinned = pinned === k ? null : k;
+      if (pinned) link(pinned, true);
+    });
+    if (n.matches('.ln')) {
+      n.tabIndex = 0;
+      n.addEventListener('focus', () => link(k, true));
+      n.addEventListener('blur', () => { if (pinned !== k) link(k, false); });
+    }
+  });
+  // a tap outside a row of Figure 3 closes its tooltip
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.hit, [data-chart="epochs"]')) document.querySelectorAll('.tip.on').forEach(t => t.classList.remove('on'));
+  });
+  // copy BibTeX
+  const cb = document.getElementById('copy-bib');
+  cb.addEventListener('click', () => {
+    const txt = document.getElementById('bib').textContent;
+    const done = () => { cb.textContent = 'Copied'; setTimeout(() => cb.textContent = 'Copy BibTeX', 1600); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById('bib')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); cb.textContent = 'Selected, press ⌘C'; };
+    try { navigator.clipboard.writeText(txt).then(done, fallback); } catch (err) { fallback(); }
+  });
+  // trailer plays while visible, unless the reader prefers reduced motion
+  const vid = document.getElementById('trailer');
+  if (vid && !matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+    new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) vid.play().catch(() => {}); else vid.pause(); }), { threshold: 0.4 }).observe(vid);
+  }
+}
+function boot() {
+  wire();
+  document.querySelectorAll('[data-chart]').forEach(el => charts[el.dataset.chart] && charts[el.dataset.chart](el));
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+
+
+</script>
+
+</body>
+</html>
