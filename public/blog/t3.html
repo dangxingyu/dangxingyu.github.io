@@ -545,11 +545,11 @@ pre.bib { font: 12.5px/1.6 var(--mono); background: var(--panel); color: var(--i
 </section>
 
 <section id="limits">
-  <h2 data-e="e110">Where it does nothing</h2>
+  <h2 data-e="e110">Further discussion</h2>
   <ul class="tight">
     <li data-e="e111"><strong>One long pass.</strong> We find no reliable gain over a long pass in which no token repeats. On the modded-nanogpt track<sup class="ref"><a href="#ref-10">10</a></sup>, T³ with MuonW stays within 0.003 of the baseline at every run length from 0.21B to 1.7B tokens, which is within the run-to-run noise of that track.</li>
   </ul>
-  <p data-e="e136">Nexus<sup class="ref"><a href="#ref-11">11</a></sup> uses a closely related update in large-scale pretraining, taking normalized steps on <span class="v">K</span> consecutive micro-batches and passing the total displacement to the optimizer. It differs from T³ in passing normalized steps rather than raw gradients and in moving all the weights, and it targets downstream accuracy in one-pass pretraining.</p>
+  <p data-e="e136">Nexus<sup class="ref"><a href="#ref-11">11</a></sup> uses a closely related update in large-scale pretraining, taking normalized steps on <span class="v">K</span> consecutive micro-batches and passing the total displacement to the optimizer. It differs from T³ in passing normalized steps rather than raw gradients and in moving all the weights, and in one-pass pretraining it reaches the same pretraining loss with <strong>better downstream accuracy</strong>.</p>
 </section>
 
 <section id="conclusion">
