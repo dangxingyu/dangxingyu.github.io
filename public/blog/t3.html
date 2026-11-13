@@ -555,6 +555,7 @@ pre.bib { font: 12.5px/1.6 var(--mono); background: var(--panel); color: var(--i
   <h2 data-e="e133">Conclusion</h2>
   <p data-e="e134">T³ is a cheap meta-gradient step for data-constrained pretraining. Each step takes a trial step on half of the batch and tests it on the other half, and the first-order version adds 6 to 9% to step time. Added to tuned recipes with nothing else changed, it lowers validation loss by 0.012 to 0.015 nats per token at 300M, 600M and 1.4B parameters, and T³ scripts hold the current records on both SlowRun<sup class="ref"><a href="#ref-4">4</a></sup> tracks.</p>
   <p data-e="e135">The gain comes from testing on tokens the trial step did not use. Testing on its own tokens works only as a lookahead and helps only until tokens start to repeat, and a smaller batch, an uphill trial step or SAM do not reproduce the gain.</p>
+  <p data-e="e136">Nexus<sup class="ref"><a href="#ref-11">11</a></sup> uses a closely related update in large-scale pretraining, taking normalized steps on <span class="v">K</span> consecutive micro-batches and passing the total displacement to the optimizer. It differs from T³ in passing normalized steps rather than raw gradients and in moving all the weights, and it targets a large corpus seen about once, where it leaves the pretraining loss unchanged and improves downstream accuracy.</p>
 </section>
 
 <section class="refs" id="refs">
@@ -570,6 +571,7 @@ pre.bib { font: 12.5px/1.6 var(--mono); background: var(--panel); color: var(--i
     <li id="ref-8"><b>8</b><div data-e="e124">Penedo et al. <a href="https://arxiv.org/abs/2406.17557">The FineWeb Datasets: Decanting the Web for the Finest Text Data at Scale</a>. 2024.</div></li>
     <li id="ref-9"><b>9</b><div data-e="e125">Foret et al. <a href="https://arxiv.org/abs/2010.01412">Sharpness-Aware Minimization for Efficiently Improving Generalization</a>. ICLR 2021.</div></li>
     <li id="ref-10"><b>10</b><div data-e="e126">Jordan et al. <a href="https://github.com/KellerJordan/modded-nanogpt">modded-nanogpt: Speedrunning the NanoGPT baseline</a>. 2024.</div></li>
+    <li id="ref-11"><b>11</b><div data-e="e137">Chen, Zhang, Li, Dong, Shen and Zhu. <a href="https://arxiv.org/abs/2604.09258">Nexus: Same Pretraining Loss, Better Downstream Generalization via Common Minima</a>. NeurIPS 2026.</div></li>
   </ol>
 </section>
 
