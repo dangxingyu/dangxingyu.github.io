@@ -3,6 +3,18 @@ import { BlogPost } from '../types';
 // Blog metadata: local HTML posts or independently hosted articles.
 const blogPostsData: BlogPost[] = [
   {
+    id: 'megakernel',
+    title: 'A Megakernel per Model',
+    slug: 'megakernel',
+    url: 'https://dangxingyu.github.io/megakernel/',
+    excerpt: 'Claude wrote a megakernel for each of eight open models and built an inference engine around it. With the checkpoint\'s own number formats the engines are 1.13 to 1.77 times as fast as the fastest general engine at batch size 1, and up to 2.05 times with lossless model-specific weight storage; every engine passes a test suite the agents cannot modify before it is timed.',
+    content: '',
+    publishedAt: '2026-11-18',
+    tags: ['Inference', 'Megakernels', 'Coding Agents', 'GPU'],
+    readingTime: 15,
+    cover: '/covers/blog-megakernel.webp',
+  },
+  {
     id: 't3',
     title: 'Training-Time Testing for Data-Constrained Pretraining',
     slug: 't3',

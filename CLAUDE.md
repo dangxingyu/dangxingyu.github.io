@@ -113,7 +113,7 @@ on `/blog`, and at the top of each article. Covers are WebP at 1600x900 in
 Publications and talks have no images; do not add thumbnails there. `.ink-cover` in
 `src/index.css` gives the cards a hairline ring and hover scale. Covers are
 decorative (`alt=""`); titles carry the link names. Current assignments:
-batch-size 远山, RLVR 圆相, T³ 试步（a dark 圆相 ensō for half A, a flatter pale blurred ring for half Q, one stroke from the first to a red dot in the second; hollow red seal）. Keep new covers in the same series.
+batch-size 远山, RLVR 圆相, T³ 试步（a dark 圆相 ensō for half A, a flatter pale blurred ring for half Q, one stroke from the first to a red dot in the second; hollow red seal）. Megakernel 速笔（one fast horizontal stroke, pressed in at the left and running into flying white, a red dot ahead of it; seal 速; generated procedurally, an outline seal with the character in red）. Keep new covers in the same series.
 
 ### Motion and interaction
 
