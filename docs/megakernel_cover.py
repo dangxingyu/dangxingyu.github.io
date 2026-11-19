@@ -6,7 +6,8 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
-W, H = 1600, 900
+BANNER = len(sys.argv) > 4 and sys.argv[4] == 'banner'
+W, H = (2400, 480) if BANNER else (1600, 900)
 FONT = sys.argv[3] if len(sys.argv) > 3 else 'NotoSerifTC.ttf'
 rng = np.random.default_rng(20261118)
 
@@ -114,8 +115,12 @@ def main(out_webp, out_jpg):
     img = paper()
     ink = np.zeros((H, W), np.float32)
     # one fast stroke across the frame: pressed in at the left, flying white as the brush races to the right
-    path = bezier([(200, 540), (540, 572), (980, 500), (1330, 360)], 760)
-    stroke(ink, path, 136, 0.97, dry=1.0, bristles=170, head=0.8, wet=0.45)
+    if BANNER:
+        path = bezier([(760, 300), (1000, 322), (1360, 270), (1640, 160)], 640)
+        stroke(ink, path, 104, 0.97, dry=1.0, bristles=150, head=0.8, wet=0.45)
+    else:
+        path = bezier([(200, 540), (540, 572), (980, 500), (1330, 360)], 760)
+        stroke(ink, path, 136, 0.97, dry=1.0, bristles=170, head=0.8, wet=0.45)
     # ink takes the paper's texture: mottled where the fibres soak it up
     mott = blur(rng.random((H, W)).astype(np.float32), 3.5)
     mott = (mott - mott.mean()) / (mott.std() + 1e-6)
@@ -125,10 +130,12 @@ def main(out_webp, out_jpg):
     img = img * (1 - ink[..., None] * np.array([0.90, 0.92, 0.95])[None, None, :])
     out = Image.fromarray((np.clip(img, 0, 1) * 255).astype(np.uint8))
     d = ImageDraw.Draw(out)
-    cx, cy, r = 1398, 318, 19                                 # the token: a red dot past the stroke's end
+    cx, cy, r = (1700, 128, 16) if BANNER else (1398, 318, 19)                                 # the token: a red dot past the stroke's end
     d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(181, 50, 38))
-    seal(out, 1440, 752, 56)
+    seal(out, *((2214, 372, 50) if BANNER else (1440, 752, 56)))
     out.save(out_webp, "WEBP", quality=88, method=6)
+    if BANNER:
+        return
     og = out.resize((1200, 675), Image.LANCZOS).crop((0, 22, 1200, 652))
     og.save(out_jpg, "JPEG", quality=88)
 
